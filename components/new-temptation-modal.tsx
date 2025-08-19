@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent } from '@/components/ui/card'
 import { Temptation, TemptationCategory, Currency } from '@/lib/types'
-import { categorizeTemptation, getCategoryColor, getAllCategories } from '@/lib/ai-categorization'
+import { categorizeTemptation, getCategorySuggestions, getCategoryColor, getAllCategories } from '@/lib/ai-categorization'
 import { CategoryIcon } from '@/components/category-icon'
 import { settings } from '@/lib/settings'
 import { haptics } from '@/lib/haptics'
@@ -29,6 +29,7 @@ export function NewTemptationModal({ isOpen, onClose, onSubmit }: NewTemptationM
   const [manualCategory, setManualCategory] = useState<TemptationCategory | string | null>(null)
   const [showCategorySelector, setShowCategorySelector] = useState(false)
   const [predictedCategory, setPredictedCategory] = useState<TemptationCategory | string | null>(null)
+  const [categorySuggestions, setCategorySuggestions] = useState<Array<{category: TemptationCategory | string, confidence: number}>>([])
   const [allCategories, setAllCategories] = useState(getAllCategories())
   const [currency] = useState<Currency>(settings.getCurrency())
 
@@ -38,9 +39,17 @@ export function NewTemptationModal({ isOpen, onClose, onSubmit }: NewTemptationM
       try {
         const predicted = await categorizeTemptation(value.trim())
         setPredictedCategory(predicted)
+        
+        // Get multiple suggestions for better UX
+        const suggestions = getCategorySuggestions(value.trim(), 3)
+        setCategorySuggestions(suggestions)
       } catch (error) {
         console.warn('Failed to predict category:', error)
+        setCategorySuggestions([])
       }
+    } else {
+      setPredictedCategory(null)
+      setCategorySuggestions([])
     }
   }
 
@@ -88,6 +97,7 @@ export function NewTemptationModal({ isOpen, onClose, onSubmit }: NewTemptationM
       setResisted(false)
       setManualCategory(null)
       setPredictedCategory(null)
+      setCategorySuggestions([])
       setShowCategorySelector(false)
       onClose()
     } catch (error) {
@@ -169,13 +179,53 @@ export function NewTemptationModal({ isOpen, onClose, onSubmit }: NewTemptationM
                 Category
               </label>
               <div className="space-y-2">
-                {/* Predicted Category Display */}
-                {predictedCategory && !manualCategory && (
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-dashed">
-                    <CategoryIcon category={predictedCategory} className="text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      AI suggests: <span className="font-medium text-foreground">{predictedCategory}</span>
-                    </span>
+                {/* AI Suggestions Display */}
+                {categorySuggestions.length > 0 && !manualCategory && (
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-muted-foreground mb-2">
+                      AI Suggestions
+                    </div>
+                    {categorySuggestions.slice(0, 3).map((suggestion, index) => (
+                      <button
+                        key={suggestion.category}
+                        type="button"
+                        onClick={() => {
+                          haptics.tap()
+                          setManualCategory(suggestion.category)
+                        }}
+                        className={cn(
+                          "flex items-center justify-between w-full p-2 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors border border-dashed",
+                          index === 0 && "border-primary/30 bg-primary/5"
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <CategoryIcon category={suggestion.category} className="text-muted-foreground" />
+                          <span className="text-sm font-medium text-foreground">
+                            {suggestion.category}
+                          </span>
+                          {index === 0 && (
+                            <span className="text-xs text-primary font-medium px-1.5 py-0.5 rounded bg-primary/10">
+                              Best match
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-12 h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className={cn(
+                                "h-full rounded-full transition-all",
+                                suggestion.confidence > 0.7 ? "bg-green-500" :
+                                suggestion.confidence > 0.4 ? "bg-yellow-500" : "bg-red-500"
+                              )}
+                              style={{ width: `${suggestion.confidence * 100}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-muted-foreground font-medium">
+                            {Math.round(suggestion.confidence * 100)}%
+                          </span>
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 )}
 
@@ -188,7 +238,11 @@ export function NewTemptationModal({ isOpen, onClose, onSubmit }: NewTemptationM
                 >
                   <div className="flex items-center gap-2">
                     <CategoryIcon category={getSelectedCategory()} className="text-muted-foreground" />
-                    <span>{manualCategory ? `${manualCategory} (Manual)` : predictedCategory ? `${predictedCategory} (AI)` : 'Select Category'}</span>
+                    <span>
+                      {manualCategory ? `${manualCategory} (Manual)` : 
+                       predictedCategory ? `${predictedCategory} (AI${categorySuggestions[0]?.confidence ? ` - ${Math.round(categorySuggestions[0].confidence * 100)}%` : ''})` : 
+                       'Select Category'}
+                    </span>
                   </div>
                   <ChevronDown className={cn("h-4 w-4 transition-transform", showCategorySelector && "rotate-180")} />
                 </Button>

@@ -1,20 +1,24 @@
 import { TemptationCategory } from './types'
 import { settings } from './settings'
 
-// Enhanced keyword patterns with weights and contextual understanding
+// Enhanced keyword patterns with weights, synonyms, and contextual understanding
 const categoryPatterns = {
   [TemptationCategory.FOOD_DINING]: {
-    primary: ['food', 'restaurant', 'meal', 'dinner', 'lunch', 'breakfast', 'eat', 'dining'],
-    secondary: ['pizza', 'burger', 'sushi', 'chinese', 'italian', 'mexican', 'indian', 'thai'],
-    brands: ['mcdonalds', 'kfc', 'subway', 'dominos', 'taco bell', 'chipotle'],
-    actions: ['order', 'delivery', 'takeout', 'dine out', 'grab a bite'],
+    primary: ['food', 'restaurant', 'meal', 'dinner', 'lunch', 'breakfast', 'eat', 'dining', 'hungry', 'feast', 'snack', 'bite'],
+    secondary: ['pizza', 'burger', 'sushi', 'chinese', 'italian', 'mexican', 'indian', 'thai', 'cuisine', 'dish', 'menu', 'recipe', 'cooking'],
+    brands: ['mcdonalds', 'kfc', 'subway', 'dominos', 'taco bell', 'chipotle', 'wendys', 'burger king', 'papa johns', 'olive garden', 'applebees', 'panera'],
+    actions: ['order', 'delivery', 'takeout', 'dine out', 'grab a bite', 'eat out', 'food craving', 'treat myself', 'splurge on food'],
+    synonyms: ['grub', 'chow', 'nosh', 'munch', 'devour', 'consume'],
+    phrases: ['im hungry', 'food delivery', 'order food', 'restaurant night', 'dinner date', 'quick meal'],
     weight: 1.0
   },
   [TemptationCategory.COFFEE]: {
-    primary: ['coffee', 'latte', 'cappuccino', 'espresso', 'americano', 'tea'],
-    secondary: ['brew', 'roast', 'bean', 'barista', 'cafe'],
-    brands: ['starbucks', 'dunkin', 'dutch bros', 'peets', 'tim hortons'],
-    actions: ['grab coffee', 'coffee run', 'quick coffee'],
+    primary: ['coffee', 'latte', 'cappuccino', 'espresso', 'americano', 'tea', 'chai', 'mocha', 'frappuccino', 'caffeine'],
+    secondary: ['brew', 'roast', 'bean', 'barista', 'cafe', 'coffeehouse', 'espresso shot', 'iced coffee', 'hot drink'],
+    brands: ['starbucks', 'dunkin', 'dutch bros', 'peets', 'tim hortons', 'costa', 'caribou', 'blue bottle', 'philz'],
+    actions: ['grab coffee', 'coffee run', 'quick coffee', 'morning fix', 'caffeine boost', 'coffee break'],
+    synonyms: ['java', 'joe', 'cuppa', 'brew'],
+    phrases: ['need coffee', 'coffee fix', 'morning coffee', 'coffee break', 'grab a latte'],
     weight: 1.2
   },
   [TemptationCategory.BOOKS_EDUCATION]: {
@@ -102,24 +106,30 @@ const categoryPatterns = {
     weight: 1.1
   },
   [TemptationCategory.SHOPPING]: {
-    primary: ['buy', 'purchase', 'shopping', 'store', 'mall', 'retail'],
-    secondary: ['sale', 'discount', 'deal', 'bargain', 'clearance', 'item'],
-    brands: ['amazon', 'target', 'walmart', 'costco', 'ebay'],
-    actions: ['browse', 'window shopping', 'online shopping', 'impulse buy'],
+    primary: ['buy', 'purchase', 'shopping', 'store', 'mall', 'retail', 'shop', 'acquire', 'get'],
+    secondary: ['sale', 'discount', 'deal', 'bargain', 'clearance', 'item', 'offer', 'promotion', 'markdown', 'price drop'],
+    brands: ['amazon', 'target', 'walmart', 'costco', 'ebay', 'best buy', 'macy s', 'nordstrom', 'tj maxx', 'marshall s'],
+    actions: ['browse', 'window shopping', 'online shopping', 'impulse buy', 'retail therapy', 'shop around', 'quick purchase'],
+    synonyms: ['acquire', 'obtain', 'procure', 'snag', 'score'],
+    phrases: ['retail therapy', 'impulse purchase', 'shopping spree', 'great deal', 'must have', 'on sale'],
     weight: 0.7
   },
   [TemptationCategory.CLOTHES]: {
-    primary: ['clothes', 'shirt', 'pants', 'dress', 'shoes', 'jacket'],
-    secondary: ['fashion', 'style', 'outfit', 'wardrobe', 'accessory'],
-    brands: ['nike', 'adidas', 'zara', 'h&m', 'uniqlo', 'gap'],
-    actions: ['try on', 'new outfit', 'wardrobe update'],
+    primary: ['clothes', 'shirt', 'pants', 'dress', 'shoes', 'jacket', 'jeans', 'sweater', 'blouse', 'skirt', 'boots'],
+    secondary: ['fashion', 'style', 'outfit', 'wardrobe', 'accessory', 'apparel', 'attire', 'clothing', 'footwear'],
+    brands: ['nike', 'adidas', 'zara', 'h&m', 'uniqlo', 'gap', 'forever 21', 'old navy', 'banana republic', 'levi s'],
+    actions: ['try on', 'new outfit', 'wardrobe update', 'fashion shopping', 'style upgrade', 'clothing haul'],
+    synonyms: ['apparel', 'attire', 'garments', 'threads', 'duds'],
+    phrases: ['new outfit', 'wardrobe refresh', 'fashion find', 'clothing item', 'style piece'],
     weight: 1.0
   },
   [TemptationCategory.ELECTRONICS]: {
-    primary: ['phone', 'laptop', 'computer', 'tablet', 'headphones', 'tv'],
-    secondary: ['smartphone', 'electronics', 'gadget', 'device', 'tech'],
-    brands: ['apple', 'samsung', 'sony', 'microsoft', 'google'],
-    actions: ['upgrade', 'new device', 'tech purchase'],
+    primary: ['phone', 'laptop', 'computer', 'tablet', 'headphones', 'tv', 'smartphone', 'iphone', 'android', 'macbook'],
+    secondary: ['electronics', 'gadget', 'device', 'tech', 'technology', 'digital', 'smart', 'wireless', 'bluetooth'],
+    brands: ['apple', 'samsung', 'sony', 'microsoft', 'google', 'dell', 'hp', 'lenovo', 'lg', 'nvidia', 'amd'],
+    actions: ['upgrade', 'new device', 'tech purchase', 'latest model', 'tech upgrade', 'new release'],
+    synonyms: ['gadget', 'gizmo', 'device', 'gear'],
+    phrases: ['new phone', 'tech upgrade', 'latest model', 'smart device', 'electronic gadget'],
     weight: 1.1
   },
   [TemptationCategory.TRANSPORTATION]: {
@@ -140,8 +150,8 @@ function preprocessText(text: string): string {
     .trim()
 }
 
-// Calculate semantic similarity score
-function calculateSemanticScore(description: string, pattern: { primary: string[], secondary: string[], brands: string[], actions: string[], weight: number }): number {
+// Calculate enhanced semantic similarity score with phrase and synonym matching
+function calculateSemanticScore(description: string, pattern: { primary: string[], secondary: string[], brands: string[], actions: string[], synonyms?: string[], phrases?: string[], weight: number }): number {
   const processedDesc = preprocessText(description)
   // const words = processedDesc.split(' ') // Will be used for future enhancements
   
@@ -179,6 +189,26 @@ function calculateSemanticScore(description: string, pattern: { primary: string[
       matchCount++
     }
   })
+  
+  // Synonyms (medium-high weight)
+  if (pattern.synonyms) {
+    pattern.synonyms.forEach((synonym: string) => {
+      if (processedDesc.includes(synonym)) {
+        score += 2.8 * synonym.length
+        matchCount++
+      }
+    })
+  }
+  
+  // Exact phrase matching (highest weight)
+  if (pattern.phrases) {
+    pattern.phrases.forEach((phrase: string) => {
+      if (processedDesc.includes(phrase)) {
+        score += 5 * phrase.length // Highest weight for exact phrases
+        matchCount++
+      }
+    })
+  }
   
   // Apply category weight and match density bonus
   score *= pattern.weight
@@ -263,11 +293,101 @@ function fallbackCategorization(description: string): TemptationCategory | strin
   return bestCategory
 }
 
+// Get multiple category suggestions with confidence scores
+export function getCategorySuggestions(description: string, maxSuggestions: number = 3): Array<{category: TemptationCategory | string, confidence: number}> {
+  // First check custom categories
+  const customMatch = checkCustomCategories(description)
+  if (customMatch) {
+    return [{ category: customMatch, confidence: 0.95 }]
+  }
+  
+  const scores: Array<{category: TemptationCategory, score: number}> = []
+  
+  // Calculate scores for each built-in category
+  Object.entries(categoryPatterns).forEach(([category, pattern]) => {
+    const score = calculateSemanticScore(description, pattern)
+    if (score > 0) {
+      scores.push({ category: category as TemptationCategory, score })
+    }
+  })
+  
+  // Sort by score descending
+  scores.sort((a, b) => b.score - a.score)
+  
+  // Convert scores to confidence percentages (0-1)
+  const maxScore = Math.max(...scores.map(s => s.score))
+  const suggestions = scores.slice(0, maxSuggestions).map(item => ({
+    category: item.category,
+    confidence: maxScore > 0 ? Math.min(item.score / maxScore, 1) : 0
+  }))
+  
+  // Add fallback if no good matches
+  if (suggestions.length === 0 || suggestions[0].confidence < 0.3) {
+    const contextualFallback = getContextualFallback(description)
+    return [{ category: contextualFallback, confidence: 0.2 }]
+  }
+  
+  return suggestions
+}
+
+// Enhanced contextual fallback with better heuristics
+function getContextualFallback(description: string): TemptationCategory {
+  const desc = description.toLowerCase()
+  
+  // Amount-based hints with better regex
+  const smallAmount = /\$([1-9]|[1-4]\d)(\.\d{2})?/.test(description)
+  const largeAmount = /\$([2-9]\d{2}|\d{4,})(\.\d{2})?/.test(description)
+  
+  // Time-based contextual hints
+  if (desc.includes('morning') || desc.includes('wake up')) {
+    return TemptationCategory.COFFEE
+  }
+  if (desc.includes('lunch') || desc.includes('dinner') || desc.includes('hungry')) {
+    return TemptationCategory.FOOD_DINING
+  }
+  
+  // Amount-based categorization
+  if (smallAmount) {
+    if (desc.includes('quick') || desc.includes('grab') || desc.includes('stop')) {
+      return TemptationCategory.COFFEE
+    }
+    return TemptationCategory.FOOD_DINING
+  }
+  
+  if (largeAmount) {
+    if (desc.includes('online') || desc.includes('website') || desc.includes('app')) {
+      return TemptationCategory.ELECTRONICS
+    }
+    return TemptationCategory.SHOPPING
+  }
+  
+  // Location-based hints
+  if (desc.includes('online') || desc.includes('website') || desc.includes('app') || desc.includes('internet')) {
+    return TemptationCategory.SHOPPING
+  }
+  if (desc.includes('store') || desc.includes('mall') || desc.includes('shop')) {
+    return TemptationCategory.SHOPPING
+  }
+  if (desc.includes('restaurant') || desc.includes('cafe')) {
+    return TemptationCategory.FOOD_DINING
+  }
+  
+  // Activity-based hints
+  if (desc.includes('subscription') || desc.includes('monthly') || desc.includes('premium')) {
+    return TemptationCategory.SUBSCRIPTIONS
+  }
+  if (desc.includes('gift') || desc.includes('present') || desc.includes('birthday')) {
+    return TemptationCategory.GIFTS_CHARITY
+  }
+  
+  return TemptationCategory.OTHER
+}
+
 export async function categorizeTemptation(description: string): Promise<TemptationCategory | string> {
   try {
-    // For now, use the enhanced fallback system
-    // In the future, this could be extended with a custom TensorFlow.js model
-    return fallbackCategorization(description)
+    // Use the enhanced suggestion system and return the best match
+    const suggestions = getCategorySuggestions(description, 1)
+    return suggestions.length > 0 ? suggestions[0].category : fallbackCategorization(description)
   } catch (error) {
     console.warn('AI categorization failed, using fallback:', error)
     return fallbackCategorization(description)
