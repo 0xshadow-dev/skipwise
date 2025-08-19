@@ -1,13 +1,14 @@
 'use client'
 
-import { AppSettings, Currency, SUPPORTED_CURRENCIES } from './types'
+import { AppSettings, Currency, SUPPORTED_CURRENCIES, UserCategory } from './types'
 
 const SETTINGS_KEY = 'skipwise-settings'
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
   notifications: false,
-  currency: SUPPORTED_CURRENCIES[0] // USD as default
+  currency: SUPPORTED_CURRENCIES[0], // USD as default
+  customCategories: []
 }
 
 export class SettingsManager {
@@ -83,7 +84,48 @@ export class SettingsManager {
 
   formatAmount(amount: number): string {
     const currency = this.getCurrency()
+    // Handle special positioning for some currencies
+    const symbolAfterCurrencies = ['kr', 'zł', 'Kč', 'Ft', 'lei', 'лв', 'kn']
+    if (symbolAfterCurrencies.includes(currency.symbol)) {
+      return `${amount.toFixed(2)} ${currency.symbol}`
+    }
     return `${currency.symbol}${amount.toFixed(2)}`
+  }
+
+  getCustomCategories(): UserCategory[] {
+    return [...this.settings.customCategories]
+  }
+
+  addCustomCategory(category: Omit<UserCategory, 'id' | 'createdAt'>): UserCategory {
+    const newCategory: UserCategory = {
+      ...category,
+      id: crypto.randomUUID(),
+      createdAt: new Date()
+    }
+    this.settings.customCategories.push(newCategory)
+    this.saveSettings()
+    return newCategory
+  }
+
+  updateCustomCategory(id: string, updates: Partial<Pick<UserCategory, 'name' | 'color' | 'icon'>>): boolean {
+    const index = this.settings.customCategories.findIndex(c => c.id === id)
+    if (index === -1) return false
+    
+    this.settings.customCategories[index] = {
+      ...this.settings.customCategories[index],
+      ...updates
+    }
+    this.saveSettings()
+    return true
+  }
+
+  deleteCustomCategory(id: string): boolean {
+    const index = this.settings.customCategories.findIndex(c => c.id === id)
+    if (index === -1) return false
+    
+    this.settings.customCategories.splice(index, 1)
+    this.saveSettings()
+    return true
   }
 }
 

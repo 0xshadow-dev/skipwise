@@ -62,10 +62,12 @@ export function calculateLongestStreak(temptations: Temptation[]): number {
   return maxStreak
 }
 
-export function calculateCategoryStats(temptations: Temptation[]): CategoryStats[] {
-  const categories = Object.values(TemptationCategory)
+export function calculateCategoryStats(temptations: Temptation[], customCategories: string[] = []): CategoryStats[] {
+  // Combine built-in categories with custom ones
+  const builtInCategories = Object.values(TemptationCategory)
+  const allCategories = [...builtInCategories, ...customCategories]
   
-  return categories.map(category => {
+  return allCategories.map(category => {
     const categoryTemptations = temptations.filter(t => t.category === category)
     const resistedCount = categoryTemptations.filter(t => t.resisted).length
     const totalAmount = categoryTemptations.reduce((sum, t) => sum + t.amount, 0)
@@ -86,8 +88,24 @@ export function calculateCategoryStats(temptations: Temptation[]): CategoryStats
   }).filter(stat => stat.totalTemptations > 0)
 }
 
-export function formatCurrency(amount: number, currencySymbol?: string): string {
+export function formatCurrency(amount: number, currencySymbol?: string, currencyCode?: string): string {
+  if (currencySymbol && currencyCode) {
+    // Format with proper locale handling
+    const formatter = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currencyCode,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })
+    return formatter.format(amount)
+  }
+  
   if (currencySymbol) {
+    // Handle special positioning for some currencies
+    const symbolAfterCurrencies = ['kr', 'zł', 'Kč', 'Ft', 'lei', 'лв', 'kn']
+    if (symbolAfterCurrencies.includes(currencySymbol)) {
+      return `${amount.toFixed(2)} ${currencySymbol}`
+    }
     return `${currencySymbol}${amount.toFixed(2)}`
   }
   

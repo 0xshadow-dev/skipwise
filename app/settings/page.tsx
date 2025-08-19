@@ -1,18 +1,25 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Moon, Sun, Bell, Trash2, Download, Upload } from 'lucide-react'
+import { ArrowLeft, Moon, Sun, Bell, Trash2, Download, Upload, Plus, Edit3, X, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
+import { Input } from '@/components/ui/input'
 import { BottomNav } from '@/components/bottom-nav'
-import { AppSettings, Currency, SUPPORTED_CURRENCIES } from '@/lib/types'
+import { AppSettings, Currency, SUPPORTED_CURRENCIES, UserCategory } from '@/lib/types'
 import { settings as settingsManager } from '@/lib/settings'
 import db, { initializeDB } from '@/lib/storage'
 
 export default function Settings() {
   const [settings, setSettings] = useState<AppSettings>(settingsManager.getSettings())
   const [isLoading, setIsLoading] = useState(true)
+  const [customCategories, setCustomCategories] = useState<UserCategory[]>([])
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [newCategoryColor, setNewCategoryColor] = useState('#3b82f6')
+  const [editingCategory, setEditingCategory] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editColor, setEditColor] = useState('')
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -21,6 +28,7 @@ export default function Settings() {
         const savedSettings = await db.getSettings()
         if (savedSettings) {
           setSettings(savedSettings)
+          setCustomCategories(savedSettings.customCategories || [])
         } else {
           // Save default settings
           await db.updateSettings(settings)
@@ -116,6 +124,84 @@ export default function Settings() {
       } catch (error) {
         console.error('Failed to clear data:', error)
       }
+    }
+  }
+
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim()) return
+
+    try {
+      const category = settingsManager.addCustomCategory({
+        name: newCategoryName.trim(),
+        color: newCategoryColor
+      })
+      
+      const updatedCategories = [...customCategories, category]
+      setCustomCategories(updatedCategories)
+      
+      const updatedSettings = { ...settings, customCategories: updatedCategories }
+      setSettings(updatedSettings)
+      await db.updateSettings(updatedSettings)
+      
+      setNewCategoryName('')
+      setNewCategoryColor('#3b82f6')
+    } catch (error) {
+      console.error('Failed to add category:', error)
+    }
+  }
+
+  const handleEditCategory = (category: UserCategory) => {
+    setEditingCategory(category.id)
+    setEditName(category.name)
+    setEditColor(category.color)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editName.trim() || !editingCategory) return
+
+    try {
+      const success = settingsManager.updateCustomCategory(editingCategory, {
+        name: editName.trim(),
+        color: editColor
+      })
+      
+      if (success) {
+        const updatedCategories = customCategories.map(cat =>
+          cat.id === editingCategory 
+            ? { ...cat, name: editName.trim(), color: editColor }
+            : cat
+        )
+        setCustomCategories(updatedCategories)
+        
+        const updatedSettings = { ...settings, customCategories: updatedCategories }
+        setSettings(updatedSettings)
+        await db.updateSettings(updatedSettings)
+      }
+      
+      setEditingCategory(null)
+      setEditName('')
+      setEditColor('')
+    } catch (error) {
+      console.error('Failed to edit category:', error)
+    }
+  }
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    if (!confirm('Are you sure you want to delete this category? This action cannot be undone.')) return
+
+    try {
+      const success = settingsManager.deleteCustomCategory(categoryId)
+      
+      if (success) {
+        const updatedCategories = customCategories.filter(cat => cat.id !== categoryId)
+        setCustomCategories(updatedCategories)
+        
+        const updatedSettings = { ...settings, customCategories: updatedCategories }
+        setSettings(updatedSettings)
+        await db.updateSettings(updatedSettings)
+      }
+    } catch (error) {
+      console.error('Failed to delete category:', error)
     }
   }
 
@@ -234,6 +320,88 @@ export default function Settings() {
                   </details>
                 )}
               </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Custom Categories */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Custom Categories</h2>
+          
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              {/* Add new category */}
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <p className="font-medium">Add Custom Category</p>
+                  <p className="text-sm text-muted-foreground">Create your own spending categories</p>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Category name"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    className="flex-1"
+                  />
+                  <input
+                    type="color"
+                    value={newCategoryColor}
+                    onChange={(e) => setNewCategoryColor(e.target.value)}
+                    className="w-12 h-10 rounded border cursor-pointer"
+                  />
+                  <Button onClick={handleAddCategory} disabled={!newCategoryName.trim()}>
+                    <Plus size={16} />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Existing custom categories */}
+              {customCategories.length > 0 && (
+                <div className="space-y-3">
+                  <p className="font-medium">Your Categories</p>
+                  <div className="space-y-2">
+                    {customCategories.map(category => (
+                      <div key={category.id} className="flex items-center gap-3 p-3 rounded-lg border">
+                        {editingCategory === category.id ? (
+                          <>
+                            <Input
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              className="flex-1"
+                            />
+                            <input
+                              type="color"
+                              value={editColor}
+                              onChange={(e) => setEditColor(e.target.value)}
+                              className="w-8 h-8 rounded border cursor-pointer"
+                            />
+                            <Button size="sm" onClick={handleSaveEdit}>
+                              Save
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setEditingCategory(null)}>
+                              <X size={14} />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <div 
+                              className="w-4 h-4 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: category.color }}
+                            />
+                            <span className="flex-1">{category.name}</span>
+                            <Button size="sm" variant="ghost" onClick={() => handleEditCategory(category)}>
+                              <Edit3 size={14} />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => handleDeleteCategory(category.id)}>
+                              <Trash2 size={14} className="text-destructive" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

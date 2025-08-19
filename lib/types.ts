@@ -3,7 +3,7 @@ export interface Temptation {
   amount: number
   description: string
   resisted: boolean
-  category: TemptationCategory
+  category: TemptationCategory | string // Allow custom categories
   createdAt: Date
   updatedAt: Date
 }
@@ -39,7 +39,7 @@ export interface UserProgress {
 }
 
 export interface CategoryStats {
-  category: TemptationCategory
+  category: TemptationCategory | string
   totalTemptations: number
   resistedCount: number
   successRate: number
@@ -52,13 +52,13 @@ export interface AIInsight {
   type: 'challenge' | 'success' | 'trend'
   title: string
   description: string
-  category?: TemptationCategory
+  category?: TemptationCategory | string
   amount?: number
   createdAt: Date
 }
 
 export interface FilterOptions {
-  category?: TemptationCategory
+  category?: TemptationCategory | string
   resisted?: boolean
   dateRange?: {
     start: Date
@@ -106,8 +106,17 @@ export const SUPPORTED_CURRENCIES: Currency[] = [
   { code: 'COP', symbol: '$', name: 'Colombian Peso' }
 ]
 
+export interface UserCategory {
+  id: string
+  name: string
+  color: string
+  icon?: string
+  createdAt: Date
+}
+
 export interface AppSettings {
   theme: 'light' | 'dark' | 'system'
   notifications: boolean
   currency: Currency
+  customCategories: UserCategory[]
 }

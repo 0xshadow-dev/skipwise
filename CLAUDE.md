@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **SkipWise** is a fully implemented temptation resistance tracking app built with Next.js. The app helps users track spending temptations, log resistance/indulgence decisions, and visualize financial savings through a privacy-first, local-only approach.
 
 ### Core Concept
-Users log spending temptations in real-time (amount + description) and mark whether they resisted or gave in. The app uses advanced AI categorization with semantic scoring to organize temptations across 19 detailed categories and provides insights on savings and resistance patterns.
+Users log spending temptations in real-time (amount + description) and mark whether they resisted or gave in. The app uses advanced AI categorization with semantic scoring to organize temptations across 19 built-in categories plus unlimited custom user-defined categories, providing insights on savings and resistance patterns.
 
 ## Development Commands
 
@@ -49,7 +49,8 @@ npm run lint
 - **TensorFlow.js** for client-side AI categorization with semantic scoring
 - Advanced AI categorization with weighted patterns, brand recognition, and contextual hints
 - Real-time progress calculations and statistics
-- **Multi-currency support** with 30+ global currencies
+- **Multi-currency support** with 30+ global currencies and improved formatting
+- **Custom category system** with user-defined categories and AI integration
 - **Haptic feedback system** for enhanced mobile interactions
 
 ## Project Structure
@@ -80,11 +81,11 @@ components/
 └── service-worker.tsx  # PWA service worker registration
 
 lib/
-├── types.ts            # TypeScript interfaces and enums (19 categories, currencies)
+├── types.ts            # TypeScript interfaces and enums (19 built-in + custom categories, currencies)
 ├── storage.ts          # IndexedDB wrapper and database operations
-├── calculations.ts     # Progress, streaks, statistics utilities, currency formatting
-├── ai-categorization.ts # Advanced semantic scoring categorization with TensorFlow.js
-├── settings.ts         # Global settings management (theme, currency, notifications)
+├── calculations.ts     # Progress, streaks, statistics utilities, enhanced currency formatting
+├── ai-categorization.ts # Advanced semantic scoring categorization with custom category support
+├── settings.ts         # Global settings management (theme, currency, notifications, custom categories)
 ├── haptics.ts          # Haptic feedback system for mobile interactions
 └── utils.ts           # cn() utility and helpers
 ```
@@ -95,26 +96,28 @@ lib/
 - **4 Main Screens**: Home/Resist, Insights, History, Settings
 - **Advanced Temptation Logging**: Floating modal with intelligent form, real-time AI predictions
 - **Resistance Tracking**: Toggle for resisted/gave-in with haptic feedback and visual responses
-- **Enhanced AI Categorization**: Semantic scoring across 19 comprehensive categories with manual override
-  - Food & Dining, Coffee, Shopping, Clothes, Electronics, Entertainment
+- **Enhanced AI Categorization**: Semantic scoring across 19 built-in categories plus unlimited custom categories
+  - Built-in: Food & Dining, Coffee, Shopping, Clothes, Electronics, Entertainment
   - Books & Education, Beauty & Wellness, Home & Garden, Sports & Fitness
   - Travel, Transportation, Subscriptions, Gifts & Charity, Health & Medical
   - Hobbies & Crafts, Alcohol & Tobacco, Gaming, Other
-- **Multi-Currency Support**: 30+ global currencies with symbol and code display
+  - Custom: User-defined categories with custom colors and AI integration
+- **Multi-Currency Support**: 30+ global currencies with proper international formatting and symbol positioning
 - **Progress Dashboard**: Total saved, success rate, current streak with animated progress rings
 - **Recent Activity**: Last 4 temptations with enhanced category icons and colors
 
 ### ✅ Data Management
 - **Offline Storage**: Full IndexedDB implementation with data persistence
-- **Global Settings System**: Persistent theme, currency, and notification preferences
-- **Search & Filters**: History screen with text search, category, and status filters
-- **Data Export**: JSON export functionality for user data
+- **Global Settings System**: Persistent theme, currency, notifications, and custom categories
+- **Custom Category Management**: Add, edit, delete custom categories with color picker
+- **Search & Filters**: History screen with text search, category, and status filters (supports custom categories)
+- **Data Export**: JSON export functionality for user data including custom categories
 - **Data Clearing**: Complete data reset with confirmation
 
 ### ✅ Analytics & Insights
-- **Category Analysis**: Spending patterns by category with success rates
+- **Category Analysis**: Spending patterns by category (built-in + custom) with success rates
 - **AI Insights**: Personalized challenges and success recommendations
-- **Statistics**: Monthly spending/saving totals, streak calculations
+- **Statistics**: Monthly spending/saving totals, streak calculations with custom category support
 - **Visual Progress**: Animated progress bars and circular progress rings
 
 ### ✅ User Experience & Accessibility
@@ -149,8 +152,9 @@ lib/
 1. Components call `initializeDB()` on mount
 2. Use `db.getTemptations()`, `db.addTemptation()` etc. for CRUD operations
 3. Settings managed through global `SettingsManager` singleton
-4. AI categorization with `categorizeTemptation()` async function
-5. Calculate progress with utilities in `lib/calculations.ts`
+4. AI categorization with `categorizeTemptation()` async function (supports custom categories)
+5. Calculate progress with utilities in `lib/calculations.ts` (includes custom categories)
+6. Custom category management through `SettingsManager` methods
 6. Haptic feedback through `haptics.tap()`, `haptics.success()` etc.
 7. Update UI state immediately for responsive UX
 
@@ -161,7 +165,7 @@ lib/
 - Custom animations defined in `globals.css`
 - Consistent spacing with `space-y-*` and `gap-*` classes
 - Semantic color usage (green for success, red for failure)
-- Category-specific colors for visual organization (19 unique color schemes)
+- Category-specific colors for visual organization (19 built-in + unlimited custom color schemes)
 
 ## Path Aliases
 
@@ -190,6 +194,8 @@ lib/
 ### AI & Machine Learning
 - TensorFlow.js integration ready for advanced models
 - Semantic scoring with weighted pattern matching
+- Custom category integration with keyword matching
 - Brand recognition and contextual understanding
 - Multi-language support architecture in place
 - Fallback systems for AI categorization failures
+- Prioritizes custom categories in categorization flow

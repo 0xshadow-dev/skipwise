@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent } from '@/components/ui/card'
 import { Temptation, TemptationCategory, Currency } from '@/lib/types'
-import { categorizeTemptation, getCategoryColor } from '@/lib/ai-categorization'
+import { categorizeTemptation, getCategoryColor, getAllCategories } from '@/lib/ai-categorization'
 import { CategoryIcon } from '@/components/category-icon'
 import { settings } from '@/lib/settings'
 import { haptics } from '@/lib/haptics'
@@ -26,9 +26,10 @@ export function NewTemptationModal({ isOpen, onClose, onSubmit }: NewTemptationM
   const [description, setDescription] = useState('')
   const [resisted, setResisted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [manualCategory, setManualCategory] = useState<TemptationCategory | null>(null)
+  const [manualCategory, setManualCategory] = useState<TemptationCategory | string | null>(null)
   const [showCategorySelector, setShowCategorySelector] = useState(false)
-  const [predictedCategory, setPredictedCategory] = useState<TemptationCategory | null>(null)
+  const [predictedCategory, setPredictedCategory] = useState<TemptationCategory | string | null>(null)
+  const [allCategories, setAllCategories] = useState(getAllCategories())
   const [currency, setCurrency] = useState<Currency>(settings.getCurrency())
 
   const handleDescriptionChange = async (value: string) => {
@@ -42,6 +43,11 @@ export function NewTemptationModal({ isOpen, onClose, onSubmit }: NewTemptationM
       }
     }
   }
+
+  // Update categories list when settings change
+  useEffect(() => {
+    setAllCategories(getAllCategories())
+  }, [])
 
   const getSelectedCategory = () => manualCategory || predictedCategory || TemptationCategory.OTHER
 
@@ -190,26 +196,64 @@ export function NewTemptationModal({ isOpen, onClose, onSubmit }: NewTemptationM
                 {/* Category Grid */}
                 {showCategorySelector && (
                   <div className="grid grid-cols-2 gap-2 p-2 border rounded-lg bg-background max-h-64 overflow-y-auto">
-                    {Object.values(TemptationCategory).map((category) => (
+                    {/* Built-in categories */}
+                    <div className="col-span-2 text-xs font-semibold text-muted-foreground px-2 py-1 border-b">
+                      Built-in Categories
+                    </div>
+                    {allCategories.filter(cat => !cat.isCustom).map((categoryItem) => (
                       <button
-                        key={category}
+                        key={categoryItem.name}
                         type="button"
                         onClick={() => {
                           haptics.tap()
-                          setManualCategory(category)
+                          setManualCategory(categoryItem.name as TemptationCategory)
                           setShowCategorySelector(false)
                         }}
                         className={cn(
                           "flex items-center gap-2 p-2 rounded-md text-left text-sm transition-colors hover:bg-muted",
-                          manualCategory === category && "bg-muted ring-1 ring-primary"
+                          manualCategory === categoryItem.name && "bg-muted ring-1 ring-primary"
                         )}
                       >
-                        <div className={cn("p-1.5 rounded-full", getCategoryColor(category))}>
-                          <CategoryIcon category={category} className="text-white" />
+                        <div className={cn("p-1.5 rounded-full", getCategoryColor(categoryItem.name as TemptationCategory))}>
+                          <CategoryIcon category={categoryItem.name as TemptationCategory} className="text-white" />
                         </div>
-                        <span className="text-xs font-medium">{category}</span>
+                        <span className="text-xs font-medium">{categoryItem.name}</span>
                       </button>
                     ))}
+                    
+                    {/* Custom categories */}
+                    {allCategories.some(cat => cat.isCustom) && (
+                      <>
+                        <div className="col-span-2 text-xs font-semibold text-muted-foreground px-2 py-1 border-b mt-2">
+                          Custom Categories
+                        </div>
+                        {allCategories.filter(cat => cat.isCustom).map((categoryItem) => (
+                          <button
+                            key={categoryItem.name}
+                            type="button"
+                            onClick={() => {
+                              haptics.tap()
+                              setManualCategory(categoryItem.name)
+                              setShowCategorySelector(false)
+                            }}
+                            className={cn(
+                              "flex items-center gap-2 p-2 rounded-md text-left text-sm transition-colors hover:bg-muted",
+                              manualCategory === categoryItem.name && "bg-muted ring-1 ring-primary"
+                            )}
+                          >
+                            <div 
+                              className="p-1.5 rounded-full w-6 h-6 flex items-center justify-center"
+                              style={{ backgroundColor: categoryItem.color }}
+                            >
+                              <span className="text-white text-xs font-bold">
+                                {categoryItem.name.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <span className="text-xs font-medium">{categoryItem.name}</span>
+                          </button>
+                        ))}
+                      </>
+                    )}
                   </div>
                 )}
 

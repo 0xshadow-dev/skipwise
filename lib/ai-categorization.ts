@@ -1,5 +1,6 @@
 import * as tf from '@tensorflow/tfjs'
-import { TemptationCategory } from './types'
+import { TemptationCategory, UserCategory } from './types'
+import { settings } from './settings'
 
 // Enhanced keyword patterns with weights and contextual understanding
 const categoryPatterns = {
@@ -189,18 +190,44 @@ function calculateSemanticScore(description: string, pattern: any): number {
   return score
 }
 
+// Check if description matches custom categories
+function checkCustomCategories(description: string): string | null {
+  const customCategories = settings.getCustomCategories()
+  const processedDesc = preprocessText(description)
+  
+  // Simple keyword matching for custom categories
+  for (const category of customCategories) {
+    const categoryWords = preprocessText(category.name).split(' ')
+    const hasMatch = categoryWords.some(word => 
+      word.length > 2 && processedDesc.includes(word)
+    )
+    
+    if (hasMatch) {
+      return category.name
+    }
+  }
+  
+  return null
+}
+
 // Fallback categorization using enhanced keyword matching
-function fallbackCategorization(description: string): TemptationCategory {
+function fallbackCategorization(description: string): TemptationCategory | string {
+  // First check custom categories
+  const customMatch = checkCustomCategories(description)
+  if (customMatch) {
+    return customMatch
+  }
+  
   const scores: Record<TemptationCategory, number> = {} as any
   
-  // Calculate scores for each category
+  // Calculate scores for each built-in category
   Object.entries(categoryPatterns).forEach(([category, pattern]) => {
     scores[category as TemptationCategory] = calculateSemanticScore(description, pattern)
   })
   
   // Find best match
   let maxScore = 0
-  let bestCategory = TemptationCategory.OTHER
+  let bestCategory: TemptationCategory = TemptationCategory.OTHER
   
   Object.entries(scores).forEach(([category, score]) => {
     if (score > maxScore) {
@@ -237,7 +264,7 @@ function fallbackCategorization(description: string): TemptationCategory {
   return bestCategory
 }
 
-export async function categorizeTemptation(description: string): Promise<TemptationCategory> {
+export async function categorizeTemptation(description: string): Promise<TemptationCategory | string> {
   try {
     // For now, use the enhanced fallback system
     // In the future, this could be extended with a custom TensorFlow.js model
@@ -248,7 +275,18 @@ export async function categorizeTemptation(description: string): Promise<Temptat
   }
 }
 
-export function getCategoryColor(category: TemptationCategory): string {
+export function getCategoryColor(category: TemptationCategory | string): string {
+  // Check if it's a custom category
+  if (!Object.values(TemptationCategory).includes(category as TemptationCategory)) {
+    const customCategories = settings.getCustomCategories()
+    const customCategory = customCategories.find(c => c.name === category)
+    if (customCategory) {
+      return `bg-[${customCategory.color}]`
+    }
+    return 'bg-gray-500'
+  }
+  
+  // Handle built-in categories
   const colors = {
     [TemptationCategory.FOOD_DINING]: 'bg-orange-500',
     [TemptationCategory.COFFEE]: 'bg-amber-600',
@@ -271,5 +309,21 @@ export function getCategoryColor(category: TemptationCategory): string {
     [TemptationCategory.OTHER]: 'bg-gray-500'
   }
 
-  return colors[category] || 'bg-gray-500'
+  return colors[category as TemptationCategory] || 'bg-gray-500'
+}
+
+// Get all available categories (built-in + custom)
+export function getAllCategories(): Array<{name: string, isCustom: boolean, color?: string}> {
+  const builtInCategories = Object.values(TemptationCategory).map(cat => ({
+    name: cat,
+    isCustom: false
+  }))
+  
+  const customCategories = settings.getCustomCategories().map(cat => ({
+    name: cat.name,
+    isCustom: true,
+    color: cat.color
+  }))
+  
+  return [...builtInCategories, ...customCategories]
 }
