@@ -83,7 +83,7 @@ components/
 lib/
 ├── types.ts            # TypeScript interfaces and enums (19 built-in + custom categories, currencies)
 ├── storage.ts          # IndexedDB wrapper and database operations
-├── calculations.ts     # Progress, streaks, statistics utilities, enhanced currency formatting
+├── calculations.ts     # Advanced analytics: patterns, trends, risks, recommendations, enhanced currency formatting
 ├── ai-categorization.ts # Advanced semantic scoring categorization with custom category support
 ├── settings.ts         # Global settings management (theme, currency, notifications, custom categories)
 ├── haptics.ts          # Haptic feedback system for mobile interactions
@@ -114,11 +114,15 @@ lib/
 - **Data Export**: JSON export functionality for user data including custom categories
 - **Data Clearing**: Complete data reset with confirmation
 
-### ✅ Analytics & Insights
-- **Category Analysis**: Spending patterns by category (built-in + custom) with success rates
-- **AI Insights**: Personalized challenges and success recommendations
-- **Statistics**: Monthly spending/saving totals, streak calculations with custom category support
-- **Visual Progress**: Animated progress bars and circular progress rings
+### ✅ Advanced Analytics & Insights
+- **Comprehensive Insights System**: 15+ meaningful insights vs basic category stats
+- **Behavioral Pattern Analysis**: Peak temptation time/day identification, resistance rates by purchase amount
+- **Trend Analysis**: Month-over-month comparisons with trend indicators, spending/savings trajectories
+- **Smart Risk Assessment**: High-risk category identification, weekend spending pattern detection
+- **Intelligent Recommendations**: Budget suggestions, time-based behavioral advice, category-specific strategies
+- **Real-time Data Sync**: Auto-refresh insights with latest transaction data (5-second intervals + focus events)
+- **Visual Analytics**: Color-coded priority system, gradient insight cards, mini progress visualizations
+- **Actionable Intelligence**: Specific strategies like 24-hour rule, purchase approval systems, alternative suggestions
 
 ### ✅ User Experience & Accessibility
 - **Mobile-First Design**: Optimized for one-handed smartphone usage
@@ -138,7 +142,7 @@ lib/
 - **Data Import**: JSON import functionality to complement export
 - **Advanced AI**: Custom TensorFlow.js models for personalized categorization
 - **Social Features**: Anonymous community challenges and leaderboards
-- **Advanced Analytics**: Spending pattern predictions, trend analysis
+- **Predictive Analytics**: Machine learning-based spending predictions, goal achievement forecasts
 
 ## Development Patterns
 
@@ -153,10 +157,11 @@ lib/
 2. Use `db.getTemptations()`, `db.addTemptation()` etc. for CRUD operations
 3. Settings managed through global `SettingsManager` singleton
 4. AI categorization with `categorizeTemptation()` async function (supports custom categories)
-5. Calculate progress with utilities in `lib/calculations.ts` (includes custom categories)
-6. Custom category management through `SettingsManager` methods
-6. Haptic feedback through `haptics.tap()`, `haptics.success()` etc.
-7. Update UI state immediately for responsive UX
+5. Advanced analytics with utilities: `analyzeSpendingPatterns()`, `analyzeTrends()`, `assessRisks()`, `generateRecommendations()`
+6. Real-time insights sync via focus/visibility events and periodic refresh (5-second intervals)
+7. Custom category management through `SettingsManager` methods
+8. Haptic feedback through `haptics.tap()`, `haptics.success()` etc.
+9. Update UI state immediately for responsive UX
 
 ### Styling Conventions
 - Mobile-first responsive design with Tailwind classes
