@@ -139,6 +139,37 @@ export function getTemptationsLastMonth(temptations: Temptation[]): Temptation[]
   })
 }
 
+export function getTemptationsByPeriod(temptations: Temptation[], period: 'day' | 'week' | 'month' | 'quarter' | 'year' | 'all'): Temptation[] {
+  if (period === 'all') return temptations
+  
+  const now = new Date()
+  let startDate: Date
+  
+  switch (period) {
+    case 'day':
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      break
+    case 'week':
+      startDate = new Date(now.getTime() - (now.getDay() * 24 * 60 * 60 * 1000))
+      startDate.setHours(0, 0, 0, 0)
+      break
+    case 'month':
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+      break
+    case 'quarter':
+      const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3
+      startDate = new Date(now.getFullYear(), quarterStartMonth, 1)
+      break
+    case 'year':
+      startDate = new Date(now.getFullYear(), 0, 1)
+      break
+    default:
+      return temptations
+  }
+  
+  return temptations.filter(t => new Date(t.createdAt) >= startDate)
+}
+
 // Behavioral Pattern Analysis
 export function analyzeSpendingPatterns(temptations: Temptation[]) {
   const hourlyPatterns = new Array(24).fill(0)
@@ -282,16 +313,118 @@ export function generateRecommendations(temptations: Temptation[], categoryStats
     })
   }
 
-  // Success reinforcement
-  const bestCategory = categoryStats.filter(c => c.totalTemptations >= 3).sort((a, b) => b.successRate - a.successRate)[0]
-  if (bestCategory && bestCategory.successRate > 70) {
+  // Success reinforcement - focus on categories with significant spending AND good control
+  const meaningfulCategories = categoryStats.filter(c => c.totalTemptations >= 3 && c.totalAmount >= 50)
+  const bestCategory = meaningfulCategories.sort((a, b) => {
+    // Weight by both success rate and financial impact
+    const aScore = b.successRate * Math.log(b.totalAmount + 1)
+    const bScore = a.successRate * Math.log(a.totalAmount + 1)
+    return bScore - aScore
+  })[0]
+  
+  if (bestCategory && bestCategory.successRate >= 70) {
     recommendations.push({
       type: 'success',
-      title: `Great ${bestCategory.category} Control!`,
-      description: `You're resisting ${bestCategory.successRate}% of ${bestCategory.category.toLowerCase()} temptations. Apply this same mindset to other categories.`,
+      title: `Excellent ${bestCategory.category} Control!`,
+      description: `You've resisted ${bestCategory.successRate}% of ${bestCategory.category.toLowerCase()} temptations worth ${formatCurrency(bestCategory.totalAmount)}. Apply this discipline to your problem areas.`,
       priority: 'low'
     })
   }
+  
+  // Priority insights for problematic high-spending categories
+  const problemCategories = categoryStats
+    .filter(c => c.totalTemptations >= 2 && c.totalAmount >= 25)
+    .sort((a, b) => {
+      // Prioritize by: low success rate + high total amount + high average amount
+      const aScore = (100 - a.successRate) * Math.log(a.totalAmount + 1) * (a.totalAmount / a.totalTemptations)
+      const bScore = (100 - b.successRate) * Math.log(b.totalAmount + 1) * (b.totalAmount / b.totalTemptations)
+      return bScore - aScore
+    })
+    .slice(0, 2)
+  
+  problemCategories.forEach(category => {
+    const avgAmount = category.totalAmount / category.totalTemptations
+    const spentAmount = category.totalAmount - category.savedAmount
+    if (spentAmount > 0) {
+      recommendations.unshift({
+        type: 'priority',
+        title: `Focus on ${category.category}`,
+        description: `Your biggest opportunity: You've spent ${formatCurrency(spentAmount)} in ${category.category.toLowerCase()} with only ${category.successRate}% resistance rate (avg ${formatCurrency(avgAmount)} per temptation).`,
+        priority: 'high'
+      })
+    }
+  })
 
-  return recommendations.slice(0, 5) // Return top 5 recommendations
+  return recommendations.slice(0, 6) // Return top 6 recommendations
+}
+
+// Enhanced insights for better understanding
+export function generateAdvancedInsights(temptations: Temptation[], categoryStats: CategoryStats[]) {
+  const patterns = analyzeSpendingPatterns(temptations)
+  const trends = analyzeTrends(temptations)
+  const risks = assessRisks(temptations, categoryStats)
+  
+  const insights = []
+  
+  // Financial impact insights
+  const totalSpent = temptations.filter(t => !t.resisted).reduce((sum, t) => sum + t.amount, 0)
+  const totalSaved = temptations.filter(t => t.resisted).reduce((sum, t) => sum + t.amount, 0)
+  const avgTemptationAmount = temptations.length > 0 ? (totalSpent + totalSaved) / temptations.length : 0
+  
+  if (totalSaved > totalSpent) {
+    insights.push({
+      type: 'success',
+      title: 'Winning the Battle!',
+      description: `You've saved ${formatCurrency(totalSaved - totalSpent)} more than you've spent. Your discipline is paying off!`,
+      priority: 'high',
+      metric: totalSaved - totalSpent
+    })
+  }
+  
+  // Behavior pattern insights
+  if (patterns.peakHour >= 20 || patterns.peakHour <= 6) {
+    insights.push({
+      type: 'timing',
+      title: 'Late Night Temptations',
+      description: `Most temptations happen around ${patterns.peakHour}:00. Consider setting a "no shopping after 8 PM" rule.`,
+      priority: 'medium',
+      metric: patterns.peakHour
+    })
+  }
+  
+  // Category performance insights
+  const strongestCategory = categoryStats
+    .filter(c => c.totalTemptations >= 3 && c.totalAmount >= 25)
+    .sort((a, b) => b.successRate - a.successRate)[0]
+    
+  if (strongestCategory && strongestCategory.successRate >= 80) {
+    insights.push({
+      type: 'strength',
+      title: `${strongestCategory.category} Mastery`,
+      description: `${strongestCategory.successRate}% success rate in ${strongestCategory.category.toLowerCase()}! You've saved ${formatCurrency(strongestCategory.savedAmount)} here.`,
+      priority: 'low',
+      metric: strongestCategory.successRate
+    })
+  }
+  
+  // Improvement opportunities
+  const worstCategory = categoryStats
+    .filter(c => c.totalTemptations >= 2 && c.totalAmount >= 50)
+    .sort((a, b) => a.successRate - b.successRate)[0]
+    
+  if (worstCategory && worstCategory.successRate < 50) {
+    const lostAmount = worstCategory.totalAmount - worstCategory.savedAmount
+    insights.push({
+      type: 'opportunity',
+      title: `${worstCategory.category} Challenge`,
+      description: `Only ${worstCategory.successRate}% success in ${worstCategory.category.toLowerCase()}. You've lost ${formatCurrency(lostAmount)} here - your biggest opportunity!`,
+      priority: 'high',
+      metric: lostAmount
+    })
+  }
+  
+  return insights.sort((a, b) => {
+    const priorityOrder = { high: 3, medium: 2, low: 1 }
+    return priorityOrder[b.priority] - priorityOrder[a.priority]
+  })
 }
