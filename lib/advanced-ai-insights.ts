@@ -258,8 +258,8 @@ export function generateComparativeInsights(temptations: Temptation[]): AIInsigh
   
   if (temptations.length < 10) return insights
   
-  const totalSpent = temptations.filter(t => !t.resisted).reduce((sum, t) => sum + t.amount, 0)
-  const totalSaved = temptations.filter(t => t.resisted).reduce((sum, t) => sum + t.amount, 0)
+  // const totalSpent = temptations.filter(t => !t.resisted).reduce((sum, t) => sum + t.amount, 0)
+  // const totalSaved = temptations.filter(t => t.resisted).reduce((sum, t) => sum + t.amount, 0)
   const successRate = (temptations.filter(t => t.resisted).length / temptations.length) * 100
   
   // Generate realistic benchmarks (these would come from anonymized user data in production)

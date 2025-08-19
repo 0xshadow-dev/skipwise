@@ -1,5 +1,4 @@
-import * as tf from '@tensorflow/tfjs'
-import { TemptationCategory, UserCategory } from './types'
+import { TemptationCategory } from './types'
 import { settings } from './settings'
 
 // Enhanced keyword patterns with weights and contextual understanding
@@ -142,9 +141,9 @@ function preprocessText(text: string): string {
 }
 
 // Calculate semantic similarity score
-function calculateSemanticScore(description: string, pattern: any): number {
+function calculateSemanticScore(description: string, pattern: { primary: string[], secondary: string[], brands: string[], actions: string[], weight: number }): number {
   const processedDesc = preprocessText(description)
-  const words = processedDesc.split(' ')
+  // const words = processedDesc.split(' ') // Will be used for future enhancements
   
   let score = 0
   let matchCount = 0
@@ -218,7 +217,7 @@ function fallbackCategorization(description: string): TemptationCategory | strin
     return customMatch
   }
   
-  const scores: Record<TemptationCategory, number> = {} as any
+  const scores: Record<TemptationCategory, number> = {} as Record<TemptationCategory, number>
   
   // Calculate scores for each built-in category
   Object.entries(categoryPatterns).forEach(([category, pattern]) => {

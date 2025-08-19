@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { ArrowLeft, TrendingUp, Zap, Clock, Calendar, AlertTriangle, Lightbulb, BarChart3, PieChart, Activity, Target } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { ArrowLeft, TrendingUp, Zap, Clock, Calendar, AlertTriangle, Lightbulb, BarChart3, Activity, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -59,6 +59,14 @@ interface Recommendation {
   priority: 'low' | 'medium' | 'high'
 }
 
+interface AdvancedInsight {
+  type: 'success' | 'strength' | 'opportunity' | string
+  title: string
+  description: string
+  priority: 'low' | 'medium' | 'high'
+  metric?: number
+}
+
 export default function Insights() {
   const [temptations, setTemptations] = useState<Temptation[]>([])
   const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([])
@@ -66,12 +74,12 @@ export default function Insights() {
   const [trends, setTrends] = useState<TrendAnalysis | null>(null)
   const [risks, setRisks] = useState<RiskAssessment | null>(null)
   const [recommendations, setRecommendations] = useState<Recommendation[]>([])
-  const [advancedInsights, setAdvancedInsights] = useState<any[]>([])
+  const [advancedInsights, setAdvancedInsights] = useState<AdvancedInsight[]>([])
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([])
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('month')
   const [isLoading, setIsLoading] = useState(true)
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true)
       await initializeDB()
@@ -120,11 +128,11 @@ export default function Insights() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [selectedPeriod])
 
   useEffect(() => {
     loadData()
-  }, [selectedPeriod]) // Re-run when period changes
+  }, [loadData]) // Re-run when period changes
   
   useEffect(() => {
     // Only refresh data when the page becomes visible after being hidden
@@ -141,7 +149,7 @@ export default function Insights() {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, []) // Only set up once
+  }, [loadData]) // Only set up once
 
   const thisMonthTemptations = getTemptationsThisMonth(temptations)
   const thisMonthSpent = thisMonthTemptations

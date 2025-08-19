@@ -1,4 +1,4 @@
-import { Temptation, UserProgress, CategoryStats, AIInsight, AppSettings } from './types'
+import { Temptation, UserProgress, AIInsight, AppSettings } from './types'
 
 const DB_NAME = 'skipwise-db'
 const DB_VERSION = 1
@@ -83,7 +83,7 @@ class SkipWiseDB {
     resisted?: boolean
     limit?: number
   }): Promise<Temptation[]> {
-    const store = this.getStore(STORES.TEMPTATIONS)
+    // const store = this.getStore(STORES.TEMPTATIONS) // Not used in current implementation
     const temptations = await this.getTemptations()
     
     let filtered = temptations

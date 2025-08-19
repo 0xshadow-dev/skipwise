@@ -6,14 +6,19 @@ import {
 import { TemptationCategory } from "@/lib/types"
 
 interface CategoryIconProps {
-  category: TemptationCategory
+  category: TemptationCategory | string
   className?: string
 }
 
 export function CategoryIcon({ category, className }: CategoryIconProps) {
   const iconProps = { className, size: 20 }
 
-  switch (category) {
+  // Handle custom categories (non-enum strings) with generic icon
+  if (!Object.values(TemptationCategory).includes(category as TemptationCategory)) {
+    return <HelpCircle {...iconProps} />
+  }
+
+  switch (category as TemptationCategory) {
     case TemptationCategory.FOOD_DINING:
       return <UtensilsCrossed {...iconProps} />
     case TemptationCategory.COFFEE:

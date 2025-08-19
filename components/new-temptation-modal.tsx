@@ -30,7 +30,7 @@ export function NewTemptationModal({ isOpen, onClose, onSubmit }: NewTemptationM
   const [showCategorySelector, setShowCategorySelector] = useState(false)
   const [predictedCategory, setPredictedCategory] = useState<TemptationCategory | string | null>(null)
   const [allCategories, setAllCategories] = useState(getAllCategories())
-  const [currency, setCurrency] = useState<Currency>(settings.getCurrency())
+  const [currency] = useState<Currency>(settings.getCurrency())
 
   const handleDescriptionChange = async (value: string) => {
     setDescription(value)

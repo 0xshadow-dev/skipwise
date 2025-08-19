@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Moon, Sun, Bell, Trash2, Download, Upload, Plus, Edit3, X, Tag } from 'lucide-react'
+import { ArrowLeft, Moon, Sun, Bell, Trash2, Download, Plus, Edit3, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { Input } from '@/components/ui/input'
 import { BottomNav } from '@/components/bottom-nav'
@@ -41,7 +41,7 @@ export default function Settings() {
     }
 
     loadSettings()
-  }, [])
+  }, [settings])
 
   const handleThemeChange = async (theme: 'light' | 'dark' | 'system') => {
     const updatedSettings = { ...settings, theme }
@@ -476,7 +476,7 @@ export default function Settings() {
                   Privacy First
                 </h3>
                 <p className="text-sm text-green-800 dark:text-green-200">
-                  All your data stays on your device. We don't collect, store, or share any personal information.
+                  All your data stays on your device. We don&apos;t collect, store, or share any personal information.
                 </p>
               </div>
             </div>

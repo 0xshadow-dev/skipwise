@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Calendar, Clock, TrendingUp } from 'lucide-react'
@@ -14,7 +14,7 @@ interface TimePeriodSelectorProps {
 }
 
 export function TimePeriodSelector({ selectedPeriod, onPeriodChange, className }: TimePeriodSelectorProps) {
-  const periods: { key: TimePeriod; label: string; icon: any }[] = [
+  const periods: { key: TimePeriod; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
     { key: 'day', label: 'Today', icon: Clock },
     { key: 'week', label: 'This Week', icon: Calendar },
     { key: 'month', label: 'This Month', icon: TrendingUp },

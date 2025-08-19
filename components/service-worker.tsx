@@ -2,6 +2,16 @@
 
 import { useEffect } from 'react'
 
+// Extend the Window interface to include workbox
+declare global {
+  interface Window {
+    workbox?: {
+      addEventListener: (event: string, callback: (event: Event) => void) => void
+      register: () => Promise<void>
+    }
+  }
+}
+
 export function ServiceWorkerRegistration() {
   useEffect(() => {
     if (

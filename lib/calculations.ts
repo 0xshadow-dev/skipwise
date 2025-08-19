@@ -257,11 +257,15 @@ export function assessRisks(temptations: Temptation[], categoryStats: CategorySt
   const isWeekendHeavy = patterns.dailyDistribution[0] + patterns.dailyDistribution[6] > 
                         patterns.dailyDistribution.slice(1, 6).reduce((a, b) => a + b, 0)
   
+  const riskLevel: 'low' | 'medium' | 'high' = 
+    highRiskCategories.length > 1 ? 'high' : 
+    highRiskCategories.length > 0 ? 'medium' : 'low'
+  
   return {
     highRiskCategories,
     highRiskHour,
     isWeekendSpender: isWeekendHeavy,
-    riskLevel: highRiskCategories.length > 1 ? 'high' : highRiskCategories.length > 0 ? 'medium' : 'low'
+    riskLevel
   }
 }
 
@@ -279,7 +283,7 @@ export function generateRecommendations(temptations: Temptation[], categoryStats
       type: 'budget',
       title: 'Set Monthly Budget',
       description: `Consider setting a monthly budget of $${Math.round(avgSpending * 0.8)} to reduce spending by 20%.`,
-      priority: 'high'
+      priority: 'high' as const
     })
   }
 
@@ -289,7 +293,7 @@ export function generateRecommendations(temptations: Temptation[], categoryStats
       type: 'timing',
       title: 'Work Hour Spending Alert',
       description: `Most of your temptations occur around ${patterns.peakHour}:00. Consider scheduling a brief walk or break instead.`,
-      priority: 'medium'
+      priority: 'medium' as const
     })
   }
 
@@ -299,7 +303,7 @@ export function generateRecommendations(temptations: Temptation[], categoryStats
       type: 'category',
       title: `${category.category} Strategy`,
       description: `You resist only ${category.successRate}% of ${category.category.toLowerCase()} temptations. Try the 24-hour rule before purchasing.`,
-      priority: 'high'
+      priority: 'high' as const
     })
   })
 
@@ -309,7 +313,7 @@ export function generateRecommendations(temptations: Temptation[], categoryStats
       type: 'amount',
       title: 'Large Purchase Strategy',
       description: 'You struggle with expensive items. Set a $100+ purchase approval rule with a trusted friend.',
-      priority: 'high'
+      priority: 'high' as const
     })
   }
 
@@ -327,7 +331,7 @@ export function generateRecommendations(temptations: Temptation[], categoryStats
       type: 'success',
       title: `Excellent ${bestCategory.category} Control!`,
       description: `You've resisted ${bestCategory.successRate}% of ${bestCategory.category.toLowerCase()} temptations worth ${formatCurrency(bestCategory.totalAmount)}. Apply this discipline to your problem areas.`,
-      priority: 'low'
+      priority: 'low' as const
     })
   }
   
@@ -350,7 +354,7 @@ export function generateRecommendations(temptations: Temptation[], categoryStats
         type: 'priority',
         title: `Focus on ${category.category}`,
         description: `Your biggest opportunity: You've spent ${formatCurrency(spentAmount)} in ${category.category.toLowerCase()} with only ${category.successRate}% resistance rate (avg ${formatCurrency(avgAmount)} per temptation).`,
-        priority: 'high'
+        priority: 'high' as const
       })
     }
   })
@@ -361,22 +365,22 @@ export function generateRecommendations(temptations: Temptation[], categoryStats
 // Enhanced insights for better understanding
 export function generateAdvancedInsights(temptations: Temptation[], categoryStats: CategoryStats[]) {
   const patterns = analyzeSpendingPatterns(temptations)
-  const trends = analyzeTrends(temptations)
-  const risks = assessRisks(temptations, categoryStats)
+  // const trends = analyzeTrends(temptations)
+  // const risks = assessRisks(temptations, categoryStats)
   
   const insights = []
   
   // Financial impact insights
   const totalSpent = temptations.filter(t => !t.resisted).reduce((sum, t) => sum + t.amount, 0)
   const totalSaved = temptations.filter(t => t.resisted).reduce((sum, t) => sum + t.amount, 0)
-  const avgTemptationAmount = temptations.length > 0 ? (totalSpent + totalSaved) / temptations.length : 0
+  // const avgTemptationAmount = temptations.length > 0 ? (totalSpent + totalSaved) / temptations.length : 0
   
   if (totalSaved > totalSpent) {
     insights.push({
       type: 'success',
       title: 'Winning the Battle!',
       description: `You've saved ${formatCurrency(totalSaved - totalSpent)} more than you've spent. Your discipline is paying off!`,
-      priority: 'high',
+      priority: 'high' as const,
       metric: totalSaved - totalSpent
     })
   }
@@ -387,7 +391,7 @@ export function generateAdvancedInsights(temptations: Temptation[], categoryStat
       type: 'timing',
       title: 'Late Night Temptations',
       description: `Most temptations happen around ${patterns.peakHour}:00. Consider setting a "no shopping after 8 PM" rule.`,
-      priority: 'medium',
+      priority: 'medium' as const,
       metric: patterns.peakHour
     })
   }
@@ -402,7 +406,7 @@ export function generateAdvancedInsights(temptations: Temptation[], categoryStat
       type: 'strength',
       title: `${strongestCategory.category} Mastery`,
       description: `${strongestCategory.successRate}% success rate in ${strongestCategory.category.toLowerCase()}! You've saved ${formatCurrency(strongestCategory.savedAmount)} here.`,
-      priority: 'low',
+      priority: 'low' as const,
       metric: strongestCategory.successRate
     })
   }
@@ -418,7 +422,7 @@ export function generateAdvancedInsights(temptations: Temptation[], categoryStat
       type: 'opportunity',
       title: `${worstCategory.category} Challenge`,
       description: `Only ${worstCategory.successRate}% success in ${worstCategory.category.toLowerCase()}. You've lost ${formatCurrency(lostAmount)} here - your biggest opportunity!`,
-      priority: 'high',
+      priority: 'high' as const,
       metric: lostAmount
     })
   }
