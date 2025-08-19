@@ -4,7 +4,7 @@ import { memo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts'
 import { Card, CardContent } from '@/components/ui/card'
 import { CategoryStats, Temptation } from '@/lib/types'
-import { formatCurrency } from '@/lib/calculations'
+import { settings } from '@/lib/settings'
 
 const COLORS = ['#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16', '#ec4899']
 
@@ -78,7 +78,7 @@ export const SpendingTrendsChart = memo(function SpendingTrendsChart({ temptatio
               <XAxis dataKey="name" className="text-xs" />
               <YAxis className="text-xs" tickFormatter={(value) => `$${value}`} />
               <Tooltip
-                formatter={(value: number, name: string) => [formatCurrency(value), name === 'spent' ? 'Spent' : 'Saved']}
+                formatter={(value: number, name: string) => [settings.formatAmount(value), name === 'spent' ? 'Spent' : 'Saved']}
                 labelFormatter={(label) => `${label}`}
               />
               <Area type="monotone" dataKey="spent" stackId="1" stroke="#ef4444" fill="url(#spentGradient)" />
@@ -127,7 +127,7 @@ export const CategoryBreakdownChart = memo(function CategoryBreakdownChart({ cat
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => [formatCurrency(value), 'Total']} />
+                <Tooltip formatter={(value: number) => [settings.formatAmount(value), 'Total']} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -189,7 +189,7 @@ export const HourlyPatternsChart = memo(function HourlyPatternsChart({ temptatio
               <YAxis className="text-xs" />
               <Tooltip
                 formatter={(value: number, name: string) => [
-                  name === 'spending' ? formatCurrency(value) : value,
+                  name === 'spending' ? settings.formatAmount(value) : value,
                   name === 'temptations' ? 'Total Temptations' : name === 'resisted' ? 'Resisted' : 'Spending'
                 ]}
                 labelFormatter={(label) => `${label}`}

@@ -1,4 +1,5 @@
 import { Temptation, UserProgress, CategoryStats, TemptationCategory } from './types'
+import { settings } from './settings'
 
 export function calculateUserProgress(temptations: Temptation[]): UserProgress {
   const totalSaved = temptations
@@ -88,29 +89,8 @@ export function calculateCategoryStats(temptations: Temptation[], customCategori
   }).filter(stat => stat.totalTemptations > 0)
 }
 
-export function formatCurrency(amount: number, currencySymbol?: string, currencyCode?: string): string {
-  if (currencySymbol && currencyCode) {
-    // Format with proper locale handling
-    const formatter = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currencyCode,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    })
-    return formatter.format(amount)
-  }
-  
-  if (currencySymbol) {
-    // Handle special positioning for some currencies
-    const symbolAfterCurrencies = ['kr', 'zł', 'Kč', 'Ft', 'lei', 'лв', 'kn']
-    if (symbolAfterCurrencies.includes(currencySymbol)) {
-      return `${amount.toFixed(2)} ${currencySymbol}`
-    }
-    return `${currencySymbol}${amount.toFixed(2)}`
-  }
-  
-  // Default fallback
-  
+// This function is now deprecated, use settings.formatAmount instead
+export function formatCurrency(amount: number): string {
   return `$${amount.toFixed(2)}`
 }
 
@@ -282,7 +262,7 @@ export function generateRecommendations(temptations: Temptation[], categoryStats
     recommendations.push({
       type: 'budget',
       title: 'Set Monthly Budget',
-      description: `Consider setting a monthly budget of $${Math.round(avgSpending * 0.8)} to reduce spending by 20%.`,
+      description: `Consider setting a monthly budget of ${settings.formatAmount(Math.round(avgSpending * 0.8))} to reduce spending by 20%.`,
       priority: 'high' as const
     })
   }
@@ -312,7 +292,7 @@ export function generateRecommendations(temptations: Temptation[], categoryStats
     recommendations.push({
       type: 'amount',
       title: 'Large Purchase Strategy',
-      description: 'You struggle with expensive items. Set a $100+ purchase approval rule with a trusted friend.',
+      description: `You struggle with expensive items. Set a ${settings.formatAmount(100)}+ purchase approval rule with a trusted friend.`,
       priority: 'high' as const
     })
   }
@@ -330,7 +310,7 @@ export function generateRecommendations(temptations: Temptation[], categoryStats
     recommendations.push({
       type: 'success',
       title: `Excellent ${bestCategory.category} Control!`,
-      description: `You've resisted ${bestCategory.successRate}% of ${bestCategory.category.toLowerCase()} temptations worth ${formatCurrency(bestCategory.totalAmount)}. Apply this discipline to your problem areas.`,
+      description: `You've resisted ${bestCategory.successRate}% of ${bestCategory.category.toLowerCase()} temptations worth ${settings.formatAmount(bestCategory.totalAmount)}. Apply this discipline to your problem areas.`,
       priority: 'low' as const
     })
   }
@@ -353,7 +333,7 @@ export function generateRecommendations(temptations: Temptation[], categoryStats
       recommendations.unshift({
         type: 'priority',
         title: `Focus on ${category.category}`,
-        description: `Your biggest opportunity: You've spent ${formatCurrency(spentAmount)} in ${category.category.toLowerCase()} with only ${category.successRate}% resistance rate (avg ${formatCurrency(avgAmount)} per temptation).`,
+        description: `Your biggest opportunity: You've spent ${settings.formatAmount(spentAmount)} in ${category.category.toLowerCase()} with only ${category.successRate}% resistance rate (avg ${settings.formatAmount(avgAmount)} per temptation).`,
         priority: 'high' as const
       })
     }
@@ -379,7 +359,7 @@ export function generateAdvancedInsights(temptations: Temptation[], categoryStat
     insights.push({
       type: 'success',
       title: 'Winning the Battle!',
-      description: `You've saved ${formatCurrency(totalSaved - totalSpent)} more than you've spent. Your discipline is paying off!`,
+      description: `You've saved ${settings.formatAmount(totalSaved - totalSpent)} more than you've spent. Your discipline is paying off!`,
       priority: 'high' as const,
       metric: totalSaved - totalSpent
     })
@@ -405,7 +385,7 @@ export function generateAdvancedInsights(temptations: Temptation[], categoryStat
     insights.push({
       type: 'strength',
       title: `${strongestCategory.category} Mastery`,
-      description: `${strongestCategory.successRate}% success rate in ${strongestCategory.category.toLowerCase()}! You've saved ${formatCurrency(strongestCategory.savedAmount)} here.`,
+      description: `${strongestCategory.successRate}% success rate in ${strongestCategory.category.toLowerCase()}! You've saved ${settings.formatAmount(strongestCategory.savedAmount)} here.`,
       priority: 'low' as const,
       metric: strongestCategory.successRate
     })
@@ -421,7 +401,7 @@ export function generateAdvancedInsights(temptations: Temptation[], categoryStat
     insights.push({
       type: 'opportunity',
       title: `${worstCategory.category} Challenge`,
-      description: `Only ${worstCategory.successRate}% success in ${worstCategory.category.toLowerCase()}. You've lost ${formatCurrency(lostAmount)} here - your biggest opportunity!`,
+      description: `Only ${worstCategory.successRate}% success in ${worstCategory.category.toLowerCase()}. You've lost ${settings.formatAmount(lostAmount)} here - your biggest opportunity!`,
       priority: 'high' as const,
       metric: lostAmount
     })

@@ -13,7 +13,6 @@ import { TimePeriodSelector, TimePeriod } from '@/components/time-period-selecto
 import { Temptation, CategoryStats } from '@/lib/types'
 import { 
   calculateCategoryStats, 
-  formatCurrency, 
   getTemptationsThisMonth,
   getTemptationsByPeriod,
   analyzeSpendingPatterns,
@@ -22,6 +21,7 @@ import {
   generateRecommendations,
   generateAdvancedInsights
 } from '@/lib/calculations'
+import { settings } from '@/lib/settings'
 import { generateAdvancedAIInsights, generateComparativeInsights, generateGoalBasedInsights, AIInsight } from '@/lib/advanced-ai-insights'
 import db, { initializeDB } from '@/lib/storage'
 
@@ -196,12 +196,12 @@ export default function Insights() {
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-1">This Month</p>
                   <p className="text-xl font-bold text-red-500">
-                    -{formatCurrency(thisMonthSpent)}
+                    -{settings.formatAmount(thisMonthSpent)}
                   </p>
                   <p className="text-xs text-muted-foreground">Spent</p>
                   {trends && trends.spendingTrend !== 0 && (
                     <Badge variant={trends.spendingTrend > 0 ? "destructive" : "secondary"} className="mt-1">
-                      {trends.spendingTrend > 0 ? "↑" : "↓"} {formatCurrency(Math.abs(trends.spendingTrend))}
+                      {trends.spendingTrend > 0 ? "↑" : "↓"} {settings.formatAmount(Math.abs(trends.spendingTrend))}
                     </Badge>
                   )}
                 </div>
@@ -213,12 +213,12 @@ export default function Insights() {
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-1">This Month</p>
                   <p className="text-xl font-bold text-green-500">
-                    +{formatCurrency(thisMonthSaved)}
+                    +{settings.formatAmount(thisMonthSaved)}
                   </p>
                   <p className="text-xs text-muted-foreground">Saved</p>
                   {trends && trends.savingsTrend !== 0 && (
                     <Badge variant={trends.savingsTrend > 0 ? "secondary" : "destructive"} className="mt-1">
-                      {trends.savingsTrend > 0 ? "↑" : "↓"} {formatCurrency(Math.abs(trends.savingsTrend))}
+                      {trends.savingsTrend > 0 ? "↑" : "↓"} {settings.formatAmount(Math.abs(trends.savingsTrend))}
                     </Badge>
                   )}
                 </div>
@@ -247,7 +247,7 @@ export default function Insights() {
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-1">Net Impact</p>
                   <p className={`text-xl font-bold ${thisMonthSaved > thisMonthSpent ? 'text-green-500' : 'text-red-500'}`}>
-                    {thisMonthSaved > thisMonthSpent ? '+' : ''}{formatCurrency(thisMonthSaved - thisMonthSpent)}
+                    {thisMonthSaved > thisMonthSpent ? '+' : ''}{settings.formatAmount(thisMonthSaved - thisMonthSpent)}
                   </p>
                   <p className="text-xs text-muted-foreground">Net Result</p>
                 </div>
@@ -649,7 +649,7 @@ export default function Insights() {
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-medium">{stat.category}</span>
                         <span className="text-sm font-semibold">
-                          {formatCurrency(stat.totalAmount)}
+                          {settings.formatAmount(stat.totalAmount)}
                         </span>
                       </div>
                       
