@@ -10,7 +10,8 @@ import { NewTemptationModal } from '@/components/new-temptation-modal'
 import { ProgressRing } from '@/components/progress-ring'
 import { CategoryIcon } from '@/components/category-icon'
 import { Temptation, UserProgress } from '@/lib/types'
-import { calculateUserProgress, formatCurrency } from '@/lib/calculations'
+import { calculateUserProgress } from '@/lib/calculations'
+import { settings } from '@/lib/settings'
 import db, { initializeDB } from '@/lib/storage'
 
 export default function Home() {
@@ -84,7 +85,7 @@ export default function Home() {
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Total Saved</p>
                   <p className="text-3xl font-bold text-primary">
-                    {formatCurrency(userProgress?.totalSaved || 0)}
+                    {settings.formatAmount(userProgress?.totalSaved || 0)}
                   </p>
                 </div>
                 <ProgressRing
@@ -151,7 +152,7 @@ export default function Home() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <p className="font-medium truncate">{temptation.resisted ? 'Resisted' : 'Gave In'}</p>
-                          <p className="text-sm font-semibold">{formatCurrency(temptation.amount)}</p>
+                          <p className="text-sm font-semibold">{settings.formatAmount(temptation.amount)}</p>
                         </div>
                         <p className="text-sm text-muted-foreground truncate">
                           {temptation.description}

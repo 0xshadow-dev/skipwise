@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { BottomNav } from '@/components/bottom-nav'
 import { CategoryIcon } from '@/components/category-icon'
 import { Temptation, TemptationCategory } from '@/lib/types'
-import { formatCurrency } from '@/lib/calculations'
+import { settings } from '@/lib/settings'
 import db, { initializeDB } from '@/lib/storage'
 import { cn } from '@/lib/utils'
 
@@ -242,7 +242,7 @@ export default function History() {
                             </p>
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-semibold">
-                                {formatCurrency(temptation.amount)}
+                                {settings.formatAmount(temptation.amount)}
                               </p>
                               <Button
                                 variant="ghost"
