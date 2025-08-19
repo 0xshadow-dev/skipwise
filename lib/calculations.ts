@@ -86,8 +86,22 @@ export function calculateCategoryStats(temptations: Temptation[]): CategoryStats
   }).filter(stat => stat.totalTemptations > 0)
 }
 
-export function formatCurrency(amount: number, currency = '$'): string {
-  return `${currency}${amount.toLocaleString()}`
+export function formatCurrency(amount: number, currencySymbol?: string): string {
+  if (currencySymbol) {
+    return `${currencySymbol}${amount.toFixed(2)}`
+  }
+  
+  // Try to use settings if available (client-side)
+  if (typeof window !== 'undefined') {
+    try {
+      const { settings } = require('./settings')
+      return settings.formatAmount(amount)
+    } catch {
+      // Fallback if settings not available
+    }
+  }
+  
+  return `$${amount.toFixed(2)}`
 }
 
 export function getTemptationsThisWeek(temptations: Temptation[]): Temptation[] {

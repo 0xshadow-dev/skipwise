@@ -6,15 +6,12 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { BottomNav } from '@/components/bottom-nav'
-import { AppSettings } from '@/lib/types'
+import { AppSettings, Currency, SUPPORTED_CURRENCIES } from '@/lib/types'
+import { settings as settingsManager } from '@/lib/settings'
 import db, { initializeDB } from '@/lib/storage'
 
 export default function Settings() {
-  const [settings, setSettings] = useState<AppSettings>({
-    theme: 'system',
-    notifications: true,
-    currency: '$'
-  })
+  const [settings, setSettings] = useState<AppSettings>(settingsManager.getSettings())
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -24,6 +21,9 @@ export default function Settings() {
         const savedSettings = await db.getSettings()
         if (savedSettings) {
           setSettings(savedSettings)
+        } else {
+          // Save default settings
+          await db.updateSettings(settings)
         }
       } catch (error) {
         console.error('Failed to load settings:', error)
@@ -35,11 +35,53 @@ export default function Settings() {
     loadSettings()
   }, [])
 
-  const handleSettingChange = async (key: keyof AppSettings, value: any) => {
-    const updatedSettings = { ...settings, [key]: value }
+  const handleThemeChange = async (theme: 'light' | 'dark' | 'system') => {
+    const updatedSettings = { ...settings, theme }
     setSettings(updatedSettings)
+    settingsManager.setTheme(theme)
+    await db.updateSettings(updatedSettings)
+    applyTheme(theme)
+  }
+
+  const handleCurrencyChange = async (currency: Currency) => {
+    const updatedSettings = { ...settings, currency }
+    setSettings(updatedSettings)
+    settingsManager.setCurrency(currency)
     await db.updateSettings(updatedSettings)
   }
+
+  const handleNotificationChange = async (notifications: boolean) => {
+    const updatedSettings = { ...settings, notifications }
+    setSettings(updatedSettings)
+    settingsManager.setNotifications(notifications)
+    await db.updateSettings(updatedSettings)
+  }
+
+  const applyTheme = (theme: 'light' | 'dark' | 'system') => {
+    const root = document.documentElement
+    
+    if (theme === 'system') {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      root.classList.toggle('dark', systemTheme === 'dark')
+    } else {
+      root.classList.toggle('dark', theme === 'dark')
+    }
+  }
+
+  // Apply theme on component mount and when system theme changes
+  useEffect(() => {
+    applyTheme(settings.theme)
+    
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleSystemThemeChange = () => {
+      if (settings.theme === 'system') {
+        applyTheme('system')
+      }
+    }
+    
+    mediaQuery.addEventListener('change', handleSystemThemeChange)
+    return () => mediaQuery.removeEventListener('change', handleSystemThemeChange)
+  }, [settings.theme])
 
   const handleExportData = async () => {
     try {
@@ -117,21 +159,21 @@ export default function Settings() {
                   <Button
                     variant={settings.theme === 'light' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => handleSettingChange('theme', 'light')}
+                    onClick={() => handleThemeChange('light')}
                   >
                     <Sun size={16} />
                   </Button>
                   <Button
                     variant={settings.theme === 'dark' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => handleSettingChange('theme', 'dark')}
+                    onClick={() => handleThemeChange('dark')}
                   >
                     <Moon size={16} />
                   </Button>
                   <Button
                     variant={settings.theme === 'system' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => handleSettingChange('theme', 'system')}
+                    onClick={() => handleThemeChange('system')}
                   >
                     Auto
                   </Button>
@@ -146,28 +188,51 @@ export default function Settings() {
                 </div>
                 <Switch
                   checked={settings.notifications}
-                  onCheckedChange={(checked) => handleSettingChange('notifications', checked)}
+                  onCheckedChange={handleNotificationChange}
                 />
               </div>
 
               {/* Currency Setting */}
-              <div className="flex items-center justify-between">
+              <div className="space-y-3">
                 <div className="space-y-1">
                   <p className="font-medium">Currency</p>
-                  <p className="text-sm text-muted-foreground">Display currency symbol</p>
+                  <p className="text-sm text-muted-foreground">Choose your preferred currency</p>
                 </div>
-                <div className="flex gap-2">
-                  {['$', '€', '£', '¥'].map(currency => (
+                <div className="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto">
+                  {SUPPORTED_CURRENCIES.slice(0, 12).map(currency => (
                     <Button
-                      key={currency}
-                      variant={settings.currency === currency ? 'default' : 'outline'}
+                      key={currency.code}
+                      variant={settings.currency.code === currency.code ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => handleSettingChange('currency', currency)}
+                      onClick={() => handleCurrencyChange(currency)}
+                      className="flex flex-col gap-1 h-auto py-2"
                     >
-                      {currency}
+                      <span className="text-lg">{currency.symbol}</span>
+                      <span className="text-xs">{currency.code}</span>
                     </Button>
                   ))}
                 </div>
+                {SUPPORTED_CURRENCIES.length > 12 && (
+                  <details className="text-sm">
+                    <summary className="text-muted-foreground cursor-pointer hover:text-foreground">
+                      Show more currencies
+                    </summary>
+                    <div className="grid grid-cols-4 gap-2 mt-2">
+                      {SUPPORTED_CURRENCIES.slice(12).map(currency => (
+                        <Button
+                          key={currency.code}
+                          variant={settings.currency.code === currency.code ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => handleCurrencyChange(currency)}
+                          className="flex flex-col gap-1 h-auto py-2"
+                        >
+                          <span className="text-lg">{currency.symbol}</span>
+                          <span className="text-xs">{currency.code}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  </details>
+                )}
               </div>
             </CardContent>
           </Card>

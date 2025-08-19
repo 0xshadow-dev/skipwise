@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **SkipWise** is a fully implemented temptation resistance tracking app built with Next.js. The app helps users track spending temptations, log resistance/indulgence decisions, and visualize financial savings through a privacy-first, local-only approach.
 
 ### Core Concept
-Users log spending temptations in real-time (amount + description) and mark whether they resisted or gave in. The app uses keyword-based AI categorization to organize temptations and provides insights on savings and resistance patterns.
+Users log spending temptations in real-time (amount + description) and mark whether they resisted or gave in. The app uses advanced AI categorization with semantic scoring to organize temptations across 19 detailed categories and provides insights on savings and resistance patterns.
 
 ## Development Commands
 
@@ -46,8 +46,11 @@ npm run lint
 
 ### Key Dependencies
 - `clsx` + `tailwind-merge` for conditional styling (via `cn()` utility)
-- Custom AI categorization using keyword matching
+- **TensorFlow.js** for client-side AI categorization with semantic scoring
+- Advanced AI categorization with weighted patterns, brand recognition, and contextual hints
 - Real-time progress calculations and statistics
+- **Multi-currency support** with 30+ global currencies
+- **Haptic feedback system** for enhanced mobile interactions
 
 ## Project Structure
 
@@ -70,15 +73,19 @@ components/
 │   ├── progress.tsx    # Progress bars
 │   └── badge.tsx       # Labels and tags
 ├── bottom-nav.tsx      # Bottom tab navigation
-├── category-icon.tsx   # Category-specific icons
+├── category-icon.tsx   # Category-specific icons (supports 19 categories)
 ├── progress-ring.tsx   # Circular progress component
-└── new-temptation-modal.tsx  # Floating modal for logging
+├── new-temptation-modal.tsx  # Floating modal with AI categorization & manual override
+├── theme-provider.tsx  # Global theme management and dark/light mode
+└── service-worker.tsx  # PWA service worker registration
 
 lib/
-├── types.ts            # TypeScript interfaces and enums
+├── types.ts            # TypeScript interfaces and enums (19 categories, currencies)
 ├── storage.ts          # IndexedDB wrapper and database operations
-├── calculations.ts     # Progress, streaks, and statistics utilities
-├── ai-categorization.ts # Keyword-based categorization logic
+├── calculations.ts     # Progress, streaks, statistics utilities, currency formatting
+├── ai-categorization.ts # Advanced semantic scoring categorization with TensorFlow.js
+├── settings.ts         # Global settings management (theme, currency, notifications)
+├── haptics.ts          # Haptic feedback system for mobile interactions
 └── utils.ts           # cn() utility and helpers
 ```
 
@@ -86,14 +93,20 @@ lib/
 
 ### ✅ Core Functionality (All Working)
 - **4 Main Screens**: Home/Resist, Insights, History, Settings
-- **Temptation Logging**: Floating action button with amount/description form
-- **Resistance Tracking**: Toggle for resisted/gave-in with visual feedback
-- **AI Categorization**: Automatic categorization into 7 categories (Food, Coffee, Shopping, etc.)
+- **Advanced Temptation Logging**: Floating modal with intelligent form, real-time AI predictions
+- **Resistance Tracking**: Toggle for resisted/gave-in with haptic feedback and visual responses
+- **Enhanced AI Categorization**: Semantic scoring across 19 comprehensive categories with manual override
+  - Food & Dining, Coffee, Shopping, Clothes, Electronics, Entertainment
+  - Books & Education, Beauty & Wellness, Home & Garden, Sports & Fitness
+  - Travel, Transportation, Subscriptions, Gifts & Charity, Health & Medical
+  - Hobbies & Crafts, Alcohol & Tobacco, Gaming, Other
+- **Multi-Currency Support**: 30+ global currencies with symbol and code display
 - **Progress Dashboard**: Total saved, success rate, current streak with animated progress rings
-- **Recent Activity**: Last 4 temptations with category icons
+- **Recent Activity**: Last 4 temptations with enhanced category icons and colors
 
 ### ✅ Data Management
 - **Offline Storage**: Full IndexedDB implementation with data persistence
+- **Global Settings System**: Persistent theme, currency, and notification preferences
 - **Search & Filters**: History screen with text search, category, and status filters
 - **Data Export**: JSON export functionality for user data
 - **Data Clearing**: Complete data reset with confirmation
@@ -104,24 +117,25 @@ lib/
 - **Statistics**: Monthly spending/saving totals, streak calculations
 - **Visual Progress**: Animated progress bars and circular progress rings
 
-### ✅ User Experience
+### ✅ User Experience & Accessibility
 - **Mobile-First Design**: Optimized for one-handed smartphone usage
+- **Dark/Light/Auto Theme System**: Full theming support with system preference detection
+- **Haptic Feedback**: Rich tactile feedback for mobile interactions (success, warning, error patterns)
+- **PWA Features**: Service worker, manifest, offline functionality, app installation
 - **Bottom Navigation**: Tab-based navigation between 4 main screens
-- **Responsive Layout**: Works on mobile and desktop
+- **Responsive Layout**: Works seamlessly on mobile and desktop
 - **Custom Animations**: Smooth transitions and loading states
-- **Error Handling**: Basic error states and loading indicators
+- **Enhanced Accessibility**: Screen reader support, keyboard navigation, high contrast theming
 
-## Remaining Enhancements
-
-### Medium Priority
-- **Theme System**: Dark/light mode toggle (UI exists, logic needed)
-- **PWA Features**: Service worker, manifest, installability
-- **Enhanced Mobile**: Haptic feedback, better touch interactions
+## Future Enhancement Opportunities
 
 ### Low Priority
-- **Notifications**: Reminder system (settings UI exists)
-- **Advanced Charts**: Visual data representations beyond progress bars
-- **Data Import**: JSON import to complement export feature
+- **Push Notifications**: Browser-based reminder system (settings UI ready)
+- **Advanced Charts**: Interactive visualizations (D3.js, Chart.js integration)
+- **Data Import**: JSON import functionality to complement export
+- **Advanced AI**: Custom TensorFlow.js models for personalized categorization
+- **Social Features**: Anonymous community challenges and leaderboards
+- **Advanced Analytics**: Spending pattern predictions, trend analysis
 
 ## Development Patterns
 
@@ -134,15 +148,20 @@ lib/
 ### Data Flow
 1. Components call `initializeDB()` on mount
 2. Use `db.getTemptations()`, `db.addTemptation()` etc. for CRUD operations
-3. Calculate progress with utilities in `lib/calculations.ts`
-4. Update UI state immediately for responsive UX
+3. Settings managed through global `SettingsManager` singleton
+4. AI categorization with `categorizeTemptation()` async function
+5. Calculate progress with utilities in `lib/calculations.ts`
+6. Haptic feedback through `haptics.tap()`, `haptics.success()` etc.
+7. Update UI state immediately for responsive UX
 
 ### Styling Conventions
 - Mobile-first responsive design with Tailwind classes
 - Use `cn()` utility for conditional styling
+- Dark/light theme support through Tailwind's `dark:` prefix
 - Custom animations defined in `globals.css`
 - Consistent spacing with `space-y-*` and `gap-*` classes
 - Semantic color usage (green for success, red for failure)
+- Category-specific colors for visual organization (19 unique color schemes)
 
 ## Path Aliases
 
@@ -152,9 +171,25 @@ lib/
 "@/lib": "./lib"
 ```
 
-## Performance Notes
+## Performance & Technical Notes
 
+### Performance Optimizations
 - IndexedDB operations are async and properly handled
 - Components use React.memo and optimization patterns where beneficial
 - 10-second logging goal achieved through streamlined UX
-- All data processing happens client-side for privacy
+- Real-time AI categorization with semantic caching
+- Service worker caching for offline performance
+- Lazy loading and code splitting where applicable
+
+### Privacy & Security
+- All data processing happens client-side for complete privacy
+- No data transmission to external servers
+- Local storage with IndexedDB encryption-ready architecture
+- Settings and preferences stored locally only
+
+### AI & Machine Learning
+- TensorFlow.js integration ready for advanced models
+- Semantic scoring with weighted pattern matching
+- Brand recognition and contextual understanding
+- Multi-language support architecture in place
+- Fallback systems for AI categorization failures

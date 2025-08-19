@@ -1,14 +1,17 @@
 'use client'
 
-import { useState } from 'react'
-import { X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { X, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent } from '@/components/ui/card'
-import { Temptation, TemptationCategory } from '@/lib/types'
-import { categorizeTemptation } from '@/lib/ai-categorization'
+import { Temptation, TemptationCategory, Currency } from '@/lib/types'
+import { categorizeTemptation, getCategoryColor } from '@/lib/ai-categorization'
+import { CategoryIcon } from '@/components/category-icon'
+import { settings } from '@/lib/settings'
+import { haptics } from '@/lib/haptics'
 import db from '@/lib/storage'
 import { cn } from '@/lib/utils'
 
@@ -23,21 +26,42 @@ export function NewTemptationModal({ isOpen, onClose, onSubmit }: NewTemptationM
   const [description, setDescription] = useState('')
   const [resisted, setResisted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [manualCategory, setManualCategory] = useState<TemptationCategory | null>(null)
+  const [showCategorySelector, setShowCategorySelector] = useState(false)
+  const [predictedCategory, setPredictedCategory] = useState<TemptationCategory | null>(null)
+  const [currency, setCurrency] = useState<Currency>(settings.getCurrency())
+
+  const handleDescriptionChange = async (value: string) => {
+    setDescription(value)
+    if (value.trim().length > 3) {
+      try {
+        const predicted = await categorizeTemptation(value.trim())
+        setPredictedCategory(predicted)
+      } catch (error) {
+        console.warn('Failed to predict category:', error)
+      }
+    }
+  }
+
+  const getSelectedCategory = () => manualCategory || predictedCategory || TemptationCategory.OTHER
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!amount || !description.trim()) return
 
+    haptics.impact()
     setIsSubmitting(true)
     
     try {
+      const category = getSelectedCategory()
+      
       const temptation: Temptation = {
         id: crypto.randomUUID(),
         amount: parseFloat(amount),
         description: description.trim(),
         resisted,
-        category: categorizeTemptation(description),
+        category,
         createdAt: new Date(),
         updatedAt: new Date()
       }
@@ -45,13 +69,24 @@ export function NewTemptationModal({ isOpen, onClose, onSubmit }: NewTemptationM
       await db.addTemptation(temptation)
       onSubmit(temptation)
       
+      // Haptic feedback based on resistance
+      if (resisted) {
+        haptics.success()
+      } else {
+        haptics.warning()
+      }
+      
       // Reset form
       setAmount('')
       setDescription('')
       setResisted(false)
+      setManualCategory(null)
+      setPredictedCategory(null)
+      setShowCategorySelector(false)
       onClose()
     } catch (error) {
       console.error('Failed to save temptation:', error)
+      haptics.error()
     } finally {
       setIsSubmitting(false)
     }
@@ -91,7 +126,7 @@ export function NewTemptationModal({ isOpen, onClose, onSubmit }: NewTemptationM
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                  $
+                  {currency.symbol}
                 </span>
                 <Input
                   id="amount"
@@ -116,10 +151,81 @@ export function NewTemptationModal({ isOpen, onClose, onSubmit }: NewTemptationM
                 id="description"
                 placeholder="Describe your temptation"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => handleDescriptionChange(e.target.value)}
                 className="bg-muted/30 min-h-20 resize-none"
                 required
               />
+            </div>
+
+            {/* Category Selector */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground">
+                Category
+              </label>
+              <div className="space-y-2">
+                {/* Predicted Category Display */}
+                {predictedCategory && !manualCategory && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-dashed">
+                    <CategoryIcon category={predictedCategory} className="text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      AI suggests: <span className="font-medium text-foreground">{predictedCategory}</span>
+                    </span>
+                  </div>
+                )}
+
+                {/* Manual Category Selector */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-between bg-muted/30 hover:bg-muted/50"
+                  onClick={() => setShowCategorySelector(!showCategorySelector)}
+                >
+                  <div className="flex items-center gap-2">
+                    <CategoryIcon category={getSelectedCategory()} className="text-muted-foreground" />
+                    <span>{manualCategory ? `${manualCategory} (Manual)` : predictedCategory ? `${predictedCategory} (AI)` : 'Select Category'}</span>
+                  </div>
+                  <ChevronDown className={cn("h-4 w-4 transition-transform", showCategorySelector && "rotate-180")} />
+                </Button>
+
+                {/* Category Grid */}
+                {showCategorySelector && (
+                  <div className="grid grid-cols-2 gap-2 p-2 border rounded-lg bg-background max-h-64 overflow-y-auto">
+                    {Object.values(TemptationCategory).map((category) => (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => {
+                          haptics.tap()
+                          setManualCategory(category)
+                          setShowCategorySelector(false)
+                        }}
+                        className={cn(
+                          "flex items-center gap-2 p-2 rounded-md text-left text-sm transition-colors hover:bg-muted",
+                          manualCategory === category && "bg-muted ring-1 ring-primary"
+                        )}
+                      >
+                        <div className={cn("p-1.5 rounded-full", getCategoryColor(category))}>
+                          <CategoryIcon category={category} className="text-white" />
+                        </div>
+                        <span className="text-xs font-medium">{category}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Reset Category */}
+                {manualCategory && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setManualCategory(null)}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Use AI suggestion
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Resisted Toggle */}
@@ -132,7 +238,10 @@ export function NewTemptationModal({ isOpen, onClose, onSubmit }: NewTemptationM
               </div>
               <Switch
                 checked={resisted}
-                onCheckedChange={setResisted}
+                onCheckedChange={(checked) => {
+                  haptics.tap()
+                  setResisted(checked)
+                }}
                 className="data-[state=checked]:bg-green-500"
               />
             </div>
