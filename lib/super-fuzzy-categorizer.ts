@@ -13,7 +13,6 @@
  */
 
 import { TemptationCategory } from "./types";
-import { settings } from "./settings";
 import {
   AdvancedFuzzyEngine,
   AdvancedFuzzyMatch,
@@ -404,7 +403,7 @@ export class SuperFuzzyCategorizer {
   private addMultilingualTerms() {
     // Add cultural context markers to help with regional disambiguation
     Object.entries(culturalMarkers).forEach(
-      ([culture, markers]: [string, string[]]) => {
+      ([, markers]: [string, string[]]) => {
         // These help identify cultural context for better matching
         const existingFood =
           this.vocabulary.get(TemptationCategory.FOOD_DINING) || [];
@@ -788,7 +787,7 @@ export class SuperFuzzyCategorizer {
   learnFromCorrection(
     userInput: string,
     correctCategory: TemptationCategory | string,
-    confidence: number = 0.9
+    _confidence: number = 0.9
   ) {
     // Store the learned pattern
     this.learnedPatterns.set(userInput.toLowerCase(), correctCategory);

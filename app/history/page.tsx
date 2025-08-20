@@ -1,28 +1,38 @@
-'use client'
+"use client";
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { ArrowLeft, Search, Trash2, Zap } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { BottomNav } from '@/components/bottom-nav'
-import { CategoryIcon } from '@/components/category-icon'
-import { Temptation, TemptationCategory } from '@/lib/types'
-import { settings } from '@/lib/settings'
-import db, { initializeDB } from '@/lib/storage'
-import { cn } from '@/lib/utils'
-import { FuzzySearcher, SearchResult, createDebouncedSearch, highlightMatches } from '@/lib/fuzzy-search'
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { ArrowLeft, Search, Trash2, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { BottomNav } from "@/components/bottom-nav";
+import { CategoryIcon } from "@/components/category-icon";
+import { Temptation, TemptationCategory } from "@/lib/types";
+import { settings } from "@/lib/settings";
+import db, { initializeDB } from "@/lib/storage";
+import { cn } from "@/lib/utils";
+import {
+  FuzzySearcher,
+  SearchResult,
+  // createDebouncedSearch, // Available for future use
+} from "@/lib/fuzzy-search";
 
 export default function History() {
-  const [temptations, setTemptations] = useState<Temptation[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<TemptationCategory | 'all'>('all')
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'resisted' | 'gave-in'>('all')
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchResults, setSearchResults] = useState<SearchResult<Temptation>[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const [useTypoTolerance, setUseTypoTolerance] = useState(false)
+  const [temptations, setTemptations] = useState<Temptation[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<
+    TemptationCategory | "all"
+  >("all");
+  const [selectedFilter, setSelectedFilter] = useState<
+    "all" | "resisted" | "gave-in"
+  >("all");
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchResults, setSearchResults] = useState<
+    SearchResult<Temptation>[]
+  >([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [useTypoTolerance, setUseTypoTolerance] = useState(false);
 
   // Initialize fuzzy searcher
   const fuzzySearcher = useMemo(() => {
@@ -30,166 +40,197 @@ export default function History() {
       threshold: 0.1,
       maxResults: 100,
       keys: [
-        { name: 'description', weight: 3 },
-        { name: 'category', weight: 2 },
-        { 
-          name: 'amount', 
+        { name: "description", weight: 3 },
+        { name: "category", weight: 2 },
+        {
+          name: "amount",
           weight: 1,
-          getFn: (item: Temptation) => settings.formatAmount(item.amount)
-        }
+          getFn: (item: unknown) =>
+            settings.formatAmount((item as Temptation).amount),
+        },
       ],
       caseSensitive: false,
-      minMatchCharLength: 1
-    })
-    searcher.setCollection(temptations)
-    return searcher
-  }, [temptations])
+      minMatchCharLength: 1,
+    });
+    searcher.setCollection(temptations);
+    return searcher;
+  }, [temptations]);
 
-  // Debounced search function
-  const debouncedSearch = useMemo(() => {
-    return createDebouncedSearch(fuzzySearcher, 200)
-  }, [fuzzySearcher])
+  // Debounced search function (available for future use)
+  // const debouncedSearch = useMemo(() => {
+  //   return createDebouncedSearch(fuzzySearcher, 200);
+  // }, [fuzzySearcher]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        await initializeDB()
-        const savedTemptations = await db.getTemptations()
-        setTemptations(savedTemptations)
+        await initializeDB();
+        const savedTemptations = await db.getTemptations();
+        setTemptations(savedTemptations);
       } catch (error) {
-        console.error('Failed to load history:', error)
+        console.error("Failed to load history:", error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    loadData()
-  }, [])
+    loadData();
+  }, []);
 
   // Handle search with fuzzy matching
-  const handleSearch = useCallback((query: string) => {
-    setSearchTerm(query)
-    setIsSearching(true)
-    
-    if (!query.trim()) {
-      setSearchResults([])
-      setIsSearching(false)
-      setUseTypoTolerance(false)
-      return
-    }
+  const handleSearch = useCallback(
+    (query: string) => {
+      setSearchTerm(query);
+      setIsSearching(true);
 
-    // Perform search immediately for testing
-    const results = fuzzySearcher.search(query)
-    console.log(`Search for "${query}" found ${results.length} results:`, results)
-    
-    if (results.length === 0 && query.length > 2) {
-      // Try with typo tolerance if no results found
-      const typoResults = fuzzySearcher.searchWithTypoTolerance(query, 2)
-      console.log(`Typo search for "${query}" found ${typoResults.length} results:`, typoResults)
-      setSearchResults(typoResults)
-      setUseTypoTolerance(typoResults.length > 0)
-    } else {
-      setSearchResults(results)
-      setUseTypoTolerance(false)
-    }
-    setIsSearching(false)
-  }, [fuzzySearcher])
+      if (!query.trim()) {
+        setSearchResults([]);
+        setIsSearching(false);
+        setUseTypoTolerance(false);
+        return;
+      }
+
+      // Perform search immediately for testing
+      const results = fuzzySearcher.search(query);
+      console.log(
+        `Search for "${query}" found ${results.length} results:`,
+        results
+      );
+
+      if (results.length === 0 && query.length > 2) {
+        // Try with typo tolerance if no results found
+        const typoResults = fuzzySearcher.searchWithTypoTolerance(query, 2);
+        console.log(
+          `Typo search for "${query}" found ${typoResults.length} results:`,
+          typoResults
+        );
+        setSearchResults(typoResults);
+        setUseTypoTolerance(typoResults.length > 0);
+      } else {
+        setSearchResults(results);
+        setUseTypoTolerance(false);
+      }
+      setIsSearching(false);
+    },
+    [fuzzySearcher]
+  );
 
   const filteredTemptations = useMemo(() => {
-    let results = searchTerm ? searchResults.map(r => r.item) : temptations
+    let results = searchTerm ? searchResults.map((r) => r.item) : temptations;
 
     // Apply category filter
-    if (selectedCategory !== 'all') {
-      results = results.filter(temptation => temptation.category === selectedCategory)
+    if (selectedCategory !== "all") {
+      results = results.filter(
+        (temptation) => temptation.category === selectedCategory
+      );
     }
 
     // Apply status filter
-    if (selectedFilter === 'resisted') {
-      results = results.filter(temptation => temptation.resisted)
-    } else if (selectedFilter === 'gave-in') {
-      results = results.filter(temptation => !temptation.resisted)
+    if (selectedFilter === "resisted") {
+      results = results.filter((temptation) => temptation.resisted);
+    } else if (selectedFilter === "gave-in") {
+      results = results.filter((temptation) => !temptation.resisted);
     }
 
-    return results
-  }, [temptations, searchResults, searchTerm, selectedCategory, selectedFilter])
+    return results;
+  }, [
+    temptations,
+    searchResults,
+    searchTerm,
+    selectedCategory,
+    selectedFilter,
+  ]);
 
   // Get search highlights for a temptation
-  const getHighlights = useCallback((temptation: Temptation) => {
-    if (!searchTerm || !searchResults.length) return null
-    
-    const result = searchResults.find(r => r.item.id === temptation.id)
-    return result?.highlights || null
-  }, [searchTerm, searchResults])
+  const getHighlights = useCallback(
+    (temptation: Temptation) => {
+      if (!searchTerm || !searchResults.length) return null;
+
+      const result = searchResults.find((r) => r.item.id === temptation.id);
+      return result?.highlights || null;
+    },
+    [searchTerm, searchResults]
+  );
 
   // Component to render highlighted text
-  const HighlightedText = ({ text, highlights, field }: { 
-    text: string, 
-    highlights: any[] | null, 
-    field: string 
+  const HighlightedText = ({
+    text,
+    highlights,
+    field,
+  }: {
+    text: string;
+    highlights: Array<{
+      field: string;
+      highlights: Array<{ start: number; end: number }>;
+    }> | null;
+    field: string;
   }) => {
-    if (!highlights) return <span>{text}</span>
-    
-    const fieldHighlights = highlights.find(h => h.field === field)?.highlights
-    if (!fieldHighlights || fieldHighlights.length === 0) return <span>{text}</span>
-    
-    let result = []
-    let lastIndex = 0
-    
+    if (!highlights) return <span>{text}</span>;
+
+    const fieldHighlights = highlights.find(
+      (h) => h.field === field
+    )?.highlights;
+    if (!fieldHighlights || fieldHighlights.length === 0)
+      return <span>{text}</span>;
+
+    const result = [];
+    let lastIndex = 0;
+
     for (const highlight of fieldHighlights) {
       // Add text before highlight
       if (highlight.start > lastIndex) {
-        result.push(text.slice(lastIndex, highlight.start))
+        result.push(text.slice(lastIndex, highlight.start));
       }
-      
+
       // Add highlighted text
       result.push(
-        <mark 
+        <mark
           key={highlight.start}
           className="bg-yellow-200 dark:bg-yellow-800 px-1 py-0.5 rounded-sm font-medium"
         >
-          {highlight.text}
+          {text.slice(highlight.start, highlight.end)}
         </mark>
-      )
-      
-      lastIndex = highlight.end
+      );
+
+      lastIndex = highlight.end;
     }
-    
+
     // Add remaining text
     if (lastIndex < text.length) {
-      result.push(text.slice(lastIndex))
+      result.push(text.slice(lastIndex));
     }
-    
-    return <span>{result}</span>
-  }
+
+    return <span>{result}</span>;
+  };
 
   const handleDeleteTemptation = async (id: string) => {
     try {
-      await db.deleteTemptation(id)
-      setTemptations(prev => prev.filter(t => t.id !== id))
+      await db.deleteTemptation(id);
+      setTemptations((prev) => prev.filter((t) => t.id !== id));
     } catch (error) {
-      console.error('Failed to delete temptation:', error)
+      console.error("Failed to delete temptation:", error);
     }
-  }
+  };
 
-  const categories = Object.values(TemptationCategory)
-  const availableCategories = categories.filter(cat => 
-    temptations.some(t => t.category === cat)
-  )
+  const categories = Object.values(TemptationCategory);
+  const availableCategories = categories.filter((cat) =>
+    temptations.some((t) => t.category === cat)
+  );
 
   const formatDate = (date: Date | string) => {
-    const d = new Date(date)
-    const today = new Date()
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
+    const d = new Date(date);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
 
     if (d.toDateString() === today.toDateString()) {
-      return 'Today'
+      return "Today";
     }
     if (d.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday'
+      return "Yesterday";
     }
-    return d.toLocaleDateString()
-  }
+    return d.toLocaleDateString();
+  };
 
   if (isLoading) {
     return (
@@ -199,7 +240,7 @@ export default function History() {
           <p className="text-muted-foreground">Loading history...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -244,32 +285,34 @@ export default function History() {
           {/* Status Filter */}
           <div className="flex gap-2">
             <Badge
-              variant={selectedFilter === 'all' ? 'default' : 'outline'}
+              variant={selectedFilter === "all" ? "default" : "outline"}
               className={cn(
                 "cursor-pointer transition-colors",
-                selectedFilter === 'all' && "bg-primary text-primary-foreground"
+                selectedFilter === "all" && "bg-primary text-primary-foreground"
               )}
-              onClick={() => setSelectedFilter('all')}
+              onClick={() => setSelectedFilter("all")}
             >
               All
             </Badge>
             <Badge
-              variant={selectedFilter === 'resisted' ? 'default' : 'outline'}
+              variant={selectedFilter === "resisted" ? "default" : "outline"}
               className={cn(
                 "cursor-pointer transition-colors",
-                selectedFilter === 'resisted' && "bg-green-500 text-white hover:bg-green-600"
+                selectedFilter === "resisted" &&
+                  "bg-green-500 text-white hover:bg-green-600"
               )}
-              onClick={() => setSelectedFilter('resisted')}
+              onClick={() => setSelectedFilter("resisted")}
             >
               Resisted
             </Badge>
             <Badge
-              variant={selectedFilter === 'gave-in' ? 'default' : 'outline'}
+              variant={selectedFilter === "gave-in" ? "default" : "outline"}
               className={cn(
                 "cursor-pointer transition-colors",
-                selectedFilter === 'gave-in' && "bg-red-500 text-white hover:bg-red-600"
+                selectedFilter === "gave-in" &&
+                  "bg-red-500 text-white hover:bg-red-600"
               )}
-              onClick={() => setSelectedFilter('gave-in')}
+              onClick={() => setSelectedFilter("gave-in")}
             >
               Gave In
             </Badge>
@@ -278,16 +321,16 @@ export default function History() {
           {/* Category Filter */}
           <div className="flex gap-2 overflow-x-auto pb-2">
             <Badge
-              variant={selectedCategory === 'all' ? 'default' : 'outline'}
+              variant={selectedCategory === "all" ? "default" : "outline"}
               className="cursor-pointer whitespace-nowrap"
-              onClick={() => setSelectedCategory('all')}
+              onClick={() => setSelectedCategory("all")}
             >
               All Categories
             </Badge>
             {availableCategories.map((category) => (
               <Badge
                 key={category}
-                variant={selectedCategory === category ? 'default' : 'outline'}
+                variant={selectedCategory === category ? "default" : "outline"}
                 className="cursor-pointer whitespace-nowrap"
                 onClick={() => setSelectedCategory(category)}
               >
@@ -302,10 +345,13 @@ export default function History() {
         {/* Results count */}
         <div className="mb-4">
           <p className="text-sm text-muted-foreground">
-            {filteredTemptations.length} {filteredTemptations.length === 1 ? 'result' : 'results'}
+            {filteredTemptations.length}{" "}
+            {filteredTemptations.length === 1 ? "result" : "results"}
             {searchTerm && (
               <>
-                {' '}for <span className="font-medium">"{searchTerm}"</span>
+                {" "}
+                for{" "}
+                <span className="font-medium">&quot;{searchTerm}&quot;</span>
                 {searchResults.length > 0 && (
                   <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
                     Ranked by relevance
@@ -321,25 +367,30 @@ export default function History() {
           <Card>
             <CardContent className="p-8 text-center">
               <p className="text-muted-foreground mb-2">
-                {temptations.length === 0 ? 'No temptations logged yet' : 'No results found'}
+                {temptations.length === 0
+                  ? "No temptations logged yet"
+                  : "No results found"}
               </p>
               <p className="text-sm text-muted-foreground">
-                {temptations.length === 0 
-                  ? 'Start tracking your temptations to see your history'
-                  : 'Try adjusting your search or filters'
-                }
+                {temptations.length === 0
+                  ? "Start tracking your temptations to see your history"
+                  : "Try adjusting your search or filters"}
               </p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-3">
             {filteredTemptations.map((temptation, index) => {
-              const prevTemptation = filteredTemptations[index - 1]
-              const showDateHeader = !prevTemptation || 
-                formatDate(temptation.createdAt) !== formatDate(prevTemptation.createdAt)
-              
-              const highlights = getHighlights(temptation)
-              const searchResult = searchTerm ? searchResults.find(r => r.item.id === temptation.id) : null
+              const prevTemptation = filteredTemptations[index - 1];
+              const showDateHeader =
+                !prevTemptation ||
+                formatDate(temptation.createdAt) !==
+                  formatDate(prevTemptation.createdAt);
+
+              const highlights = getHighlights(temptation);
+              const searchResult = searchTerm
+                ? searchResults.find((r) => r.item.id === temptation.id)
+                : null;
 
               return (
                 <div key={temptation.id}>
@@ -350,18 +401,22 @@ export default function History() {
                       </p>
                     </div>
                   )}
-                  
-                  <Card className={cn(
-                    "group hover:bg-muted/50 transition-colors",
-                    searchResult && "ring-1 ring-primary/20 bg-primary/5"
-                  )}>
+
+                  <Card
+                    className={cn(
+                      "group hover:bg-muted/50 transition-colors",
+                      searchResult && "ring-1 ring-primary/20 bg-primary/5"
+                    )}
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className={`relative p-2 rounded-full ${
-                          temptation.resisted 
-                            ? 'bg-green-500/20 text-green-600' 
-                            : 'bg-red-500/20 text-red-600'
-                        }`}>
+                        <div
+                          className={`relative p-2 rounded-full ${
+                            temptation.resisted
+                              ? "bg-green-500/20 text-green-600"
+                              : "bg-red-500/20 text-red-600"
+                          }`}
+                        >
                           <CategoryIcon category={temptation.category} />
                           {searchResult && (
                             <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full flex items-center justify-center">
@@ -371,11 +426,11 @@ export default function History() {
                             </div>
                           )}
                         </div>
-                        
+
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
                             <p className="font-medium truncate">
-                              {temptation.resisted ? 'Resisted' : 'Gave In'}
+                              {temptation.resisted ? "Resisted" : "Gave In"}
                               {searchResult && (
                                 <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
                                   {Math.round(searchResult.score * 100)}% match
@@ -384,8 +439,10 @@ export default function History() {
                             </p>
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-semibold">
-                                <HighlightedText 
-                                  text={settings.formatAmount(temptation.amount)}
+                                <HighlightedText
+                                  text={settings.formatAmount(
+                                    temptation.amount
+                                  )}
                                   highlights={highlights}
                                   field="amount"
                                 />
@@ -394,33 +451,40 @@ export default function History() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-6 w-6 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-                                onClick={() => handleDeleteTemptation(temptation.id)}
+                                onClick={() =>
+                                  handleDeleteTemptation(temptation.id)
+                                }
                               >
-                                <Trash2 size={14} className="text-destructive" />
+                                <Trash2
+                                  size={14}
+                                  className="text-destructive"
+                                />
                               </Button>
                             </div>
                           </div>
-                          
+
                           <p className="text-sm text-muted-foreground mb-1 break-words">
-                            <HighlightedText 
+                            <HighlightedText
                               text={temptation.description}
                               highlights={highlights}
                               field="description"
                             />
                           </p>
-                          
+
                           <div className="flex items-center justify-between">
                             <Badge variant="outline" className="text-xs">
-                              <HighlightedText 
+                              <HighlightedText
                                 text={temptation.category}
                                 highlights={highlights}
                                 field="category"
                               />
                             </Badge>
                             <p className="text-xs text-muted-foreground">
-                              {new Date(temptation.createdAt).toLocaleTimeString([], { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
+                              {new Date(
+                                temptation.createdAt
+                              ).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
                               })}
                             </p>
                           </div>
@@ -429,7 +493,7 @@ export default function History() {
                     </CardContent>
                   </Card>
                 </div>
-              )
+              );
             })}
           </div>
         )}
@@ -437,5 +501,5 @@ export default function History() {
 
       <BottomNav />
     </div>
-  )
+  );
 }

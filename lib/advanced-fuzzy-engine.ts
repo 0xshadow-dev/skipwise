@@ -18,7 +18,7 @@
  */
 
 import { TemptationCategory } from "./types";
-import { settings } from "./settings";
+// import { settings } from "./settings"; // Not used currently
 
 // Enhanced match result with detailed scoring breakdown
 export interface AdvancedFuzzyMatch {
@@ -257,20 +257,14 @@ class AbbreviationExpander {
   }
 
   private saveToSettings() {
-    // Convert Map to object for storage
-    const abbreviationsObj = Object.fromEntries(this.abbreviations);
-    settings.set("learnedAbbreviations", abbreviationsObj);
+    // TODO: Implement abbreviation persistence when SettingsManager supports generic storage
+    // For now, abbreviations are only stored in memory during the session
+    console.log("Abbreviation learning saved to memory (session only)");
   }
 
   private loadFromSettings() {
-    const saved = settings.get("learnedAbbreviations");
-    if (saved && typeof saved === "object") {
-      Object.entries(saved).forEach(([abbr, expansions]) => {
-        if (Array.isArray(expansions)) {
-          this.abbreviations.set(abbr, expansions);
-        }
-      });
-    }
+    // TODO: Load abbreviations from persistent storage when SettingsManager supports it
+    // For now, abbreviations are loaded fresh each session
   }
 }
 
@@ -901,7 +895,7 @@ export class AdvancedFuzzyEngine {
     // For each category, combine the best matches from different algorithms
     const combinedMatches: AdvancedFuzzyMatch[] = [];
 
-    categoryGroups.forEach((categoryMatches, category) => {
+    categoryGroups.forEach((categoryMatches, _category) => {
       // Sort by confidence
       categoryMatches.sort((a, b) => b.confidence - a.confidence);
 
