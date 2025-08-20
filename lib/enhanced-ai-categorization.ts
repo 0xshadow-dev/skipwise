@@ -47,7 +47,10 @@ interface EnhancedPattern {
 }
 
 // Enhanced category patterns with regional integration
-const enhancedCategoryPatterns: Record<TemptationCategory, EnhancedPattern> = {
+export const enhancedCategoryPatterns: Record<
+  TemptationCategory,
+  EnhancedPattern
+> = {
   [TemptationCategory.FOOD_DINING]: {
     primary: [
       "food",
@@ -639,7 +642,7 @@ function detectCulturalContext(description: string): string[] {
 function performFuzzyMatching(
   description: string,
   category: TemptationCategory,
-  pattern: EnhancedPattern,
+  pattern: EnhancedPattern
 ): CategoryMatch[] {
   const matches: CategoryMatch[] = [];
   const contexts = detectCulturalContext(description);
@@ -672,7 +675,7 @@ function performFuzzyMatching(
     Object.entries(pattern.regional).forEach(([region, regionalData]) => {
       const isDetectedContext = contexts.includes(region);
       const contextBonus = isDetectedContext ? 1.5 : 1.0; // Bonus for detected cultural context
-      
+
       regionalData.dishes?.forEach((dish) => {
         searchItems.push({
           name: dish,
@@ -707,7 +710,6 @@ function performFuzzyMatching(
   });
 
   const results = fuse.search(description);
-  
 
   // Process results and calculate scores
   results.forEach((result) => {
@@ -725,8 +727,8 @@ function performFuzzyMatching(
         source: item.type.includes("regional")
           ? "regional"
           : item.type === "brand"
-            ? "brand"
-            : "keyword",
+          ? "brand"
+          : "keyword",
         region: item.region,
         details: `Matched "${item.name}" (${item.type})`,
       });
@@ -749,8 +751,8 @@ function performMultilingualMatching(description: string): CategoryMatch[] {
             categoryType === "food"
               ? TemptationCategory.FOOD_DINING
               : categoryType === "shopping"
-                ? TemptationCategory.SHOPPING
-                : TemptationCategory.OTHER;
+              ? TemptationCategory.SHOPPING
+              : TemptationCategory.OTHER;
 
           matches.push({
             category,
@@ -800,9 +802,8 @@ function checkCustomCategories(description: string): CategoryMatch[] {
 
 // Enhanced categorization with comprehensive matching
 export async function enhancedCategorizeTemptation(
-  description: string,
+  description: string
 ): Promise<TemptationCategory | string> {
-  
   try {
     const allMatches: CategoryMatch[] = [];
 
@@ -819,7 +820,7 @@ export async function enhancedCategorizeTemptation(
       const categoryMatches = performFuzzyMatching(
         description,
         category as TemptationCategory,
-        pattern,
+        pattern
       );
       allMatches.push(...categoryMatches);
     });
@@ -851,14 +852,46 @@ function contextualFallback(description: string): TemptationCategory {
 
   // Check for common food terms that should always be FOOD_DINING
   const commonFoodTerms = [
-    'ramen', 'pho', 'sushi', 'pizza', 'burger', 'noodles', 'rice', 'soup',
-    'curry', 'pasta', 'sandwich', 'taco', 'burrito', 'salad', 'chicken', 
-    'beef', 'fish', 'pork', 'vada pav', 'biryani', 'dosa', 'samosa',
-    'idli', 'chapati', 'naan', 'roti', 'dal', 'masala', 'tandoori', 'kebab',
-    'tempura', 'yakitori', 'gyoza', 'dumpling', 'pad thai', 'laksa', 'satay'
+    "ramen",
+    "pho",
+    "sushi",
+    "pizza",
+    "burger",
+    "noodles",
+    "rice",
+    "soup",
+    "curry",
+    "pasta",
+    "sandwich",
+    "taco",
+    "burrito",
+    "salad",
+    "chicken",
+    "beef",
+    "fish",
+    "pork",
+    "vada pav",
+    "biryani",
+    "dosa",
+    "samosa",
+    "idli",
+    "chapati",
+    "naan",
+    "roti",
+    "dal",
+    "masala",
+    "tandoori",
+    "kebab",
+    "tempura",
+    "yakitori",
+    "gyoza",
+    "dumpling",
+    "pad thai",
+    "laksa",
+    "satay",
   ];
-  
-  if (commonFoodTerms.some(term => desc.includes(term))) {
+
+  if (commonFoodTerms.some((term) => desc.includes(term))) {
     return TemptationCategory.FOOD_DINING;
   }
 
@@ -881,11 +914,11 @@ function contextualFallback(description: string): TemptationCategory {
   // Amount-based hints with better regex
   const smallAmount =
     /\$([1-9]|[1-4]\d)(\.\d{2})?|\€([1-9]|[1-4]\d)(\.\d{2})?|£([1-9]|[1-4]\d)(\.\d{2})?|¥([1-9]\d{1,2})|₹([1-9]\d{2,3})/.test(
-      description,
+      description
     );
   const largeAmount =
     /\$([2-9]\d{2}|\d{4,})(\.\d{2})?|\€([2-9]\d{2}|\d{4,})(\.\d{2})?|£([2-9]\d{2}|\d{4,})(\.\d{2})?|¥([5-9]\d{3}|\d{5,})|₹([1-9]\d{4,})/.test(
-      description,
+      description
     );
 
   // Time-based contextual hints
@@ -961,7 +994,7 @@ function contextualFallback(description: string): TemptationCategory {
 // Enhanced category suggestions with detailed scoring
 export function getEnhancedCategorySuggestions(
   description: string,
-  maxSuggestions: number = 3,
+  maxSuggestions: number = 3
 ): Array<{
   category: TemptationCategory | string;
   confidence: number;
@@ -981,7 +1014,7 @@ export function getEnhancedCategorySuggestions(
     const categoryMatches = performFuzzyMatching(
       description,
       category as TemptationCategory,
-      pattern,
+      pattern
     );
     allMatches.push(...categoryMatches);
   });
@@ -991,17 +1024,21 @@ export function getEnhancedCategorySuggestions(
   allMatches.forEach((match) => {
     const categoryKey = match.category.toString();
     const existing = categoryGroups.get(categoryKey);
-    
+
     // Only add if it's a new category or better match
     if (!existing) {
       categoryGroups.set(categoryKey, match);
     } else {
       const existingScore = existing.score * existing.confidence;
       const currentScore = match.score * match.confidence;
-      
+
       // Replace if current match is significantly better or same category from higher priority source
-      if (currentScore > existingScore || 
-          (currentScore === existingScore && match.source === 'regional' && existing.source !== 'regional')) {
+      if (
+        currentScore > existingScore ||
+        (currentScore === existingScore &&
+          match.source === "regional" &&
+          existing.source !== "regional")
+      ) {
         categoryGroups.set(categoryKey, match);
       }
     }

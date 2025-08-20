@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { ArrowLeft, Search, Trash2 } from 'lucide-react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { ArrowLeft, Search, Trash2, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -12,6 +12,7 @@ import { Temptation, TemptationCategory } from '@/lib/types'
 import { settings } from '@/lib/settings'
 import db, { initializeDB } from '@/lib/storage'
 import { cn } from '@/lib/utils'
+import { FuzzySearcher, SearchResult, createDebouncedSearch, highlightMatches } from '@/lib/fuzzy-search'
 
 export default function History() {
   const [temptations, setTemptations] = useState<Temptation[]>([])
@@ -19,6 +20,35 @@ export default function History() {
   const [selectedCategory, setSelectedCategory] = useState<TemptationCategory | 'all'>('all')
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'resisted' | 'gave-in'>('all')
   const [isLoading, setIsLoading] = useState(true)
+  const [searchResults, setSearchResults] = useState<SearchResult<Temptation>[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [useTypoTolerance, setUseTypoTolerance] = useState(false)
+
+  // Initialize fuzzy searcher
+  const fuzzySearcher = useMemo(() => {
+    const searcher = new FuzzySearcher<Temptation>([], {
+      threshold: 0.1,
+      maxResults: 100,
+      keys: [
+        { name: 'description', weight: 3 },
+        { name: 'category', weight: 2 },
+        { 
+          name: 'amount', 
+          weight: 1,
+          getFn: (item: Temptation) => settings.formatAmount(item.amount)
+        }
+      ],
+      caseSensitive: false,
+      minMatchCharLength: 1
+    })
+    searcher.setCollection(temptations)
+    return searcher
+  }, [temptations])
+
+  // Debounced search function
+  const debouncedSearch = useMemo(() => {
+    return createDebouncedSearch(fuzzySearcher, 200)
+  }, [fuzzySearcher])
 
   useEffect(() => {
     const loadData = async () => {
@@ -36,29 +66,101 @@ export default function History() {
     loadData()
   }, [])
 
+  // Handle search with fuzzy matching
+  const handleSearch = useCallback((query: string) => {
+    setSearchTerm(query)
+    setIsSearching(true)
+    
+    if (!query.trim()) {
+      setSearchResults([])
+      setIsSearching(false)
+      setUseTypoTolerance(false)
+      return
+    }
+
+    // Perform search immediately for testing
+    const results = fuzzySearcher.search(query)
+    console.log(`Search for "${query}" found ${results.length} results:`, results)
+    
+    if (results.length === 0 && query.length > 2) {
+      // Try with typo tolerance if no results found
+      const typoResults = fuzzySearcher.searchWithTypoTolerance(query, 2)
+      console.log(`Typo search for "${query}" found ${typoResults.length} results:`, typoResults)
+      setSearchResults(typoResults)
+      setUseTypoTolerance(typoResults.length > 0)
+    } else {
+      setSearchResults(results)
+      setUseTypoTolerance(false)
+    }
+    setIsSearching(false)
+  }, [fuzzySearcher])
+
   const filteredTemptations = useMemo(() => {
-    return temptations.filter(temptation => {
-      // Search filter
-      if (searchTerm && !temptation.description.toLowerCase().includes(searchTerm.toLowerCase())) {
-        return false
-      }
+    let results = searchTerm ? searchResults.map(r => r.item) : temptations
 
-      // Category filter
-      if (selectedCategory !== 'all' && temptation.category !== selectedCategory) {
-        return false
-      }
+    // Apply category filter
+    if (selectedCategory !== 'all') {
+      results = results.filter(temptation => temptation.category === selectedCategory)
+    }
 
-      // Resisted filter
-      if (selectedFilter === 'resisted' && !temptation.resisted) {
-        return false
-      }
-      if (selectedFilter === 'gave-in' && temptation.resisted) {
-        return false
-      }
+    // Apply status filter
+    if (selectedFilter === 'resisted') {
+      results = results.filter(temptation => temptation.resisted)
+    } else if (selectedFilter === 'gave-in') {
+      results = results.filter(temptation => !temptation.resisted)
+    }
 
-      return true
-    })
-  }, [temptations, searchTerm, selectedCategory, selectedFilter])
+    return results
+  }, [temptations, searchResults, searchTerm, selectedCategory, selectedFilter])
+
+  // Get search highlights for a temptation
+  const getHighlights = useCallback((temptation: Temptation) => {
+    if (!searchTerm || !searchResults.length) return null
+    
+    const result = searchResults.find(r => r.item.id === temptation.id)
+    return result?.highlights || null
+  }, [searchTerm, searchResults])
+
+  // Component to render highlighted text
+  const HighlightedText = ({ text, highlights, field }: { 
+    text: string, 
+    highlights: any[] | null, 
+    field: string 
+  }) => {
+    if (!highlights) return <span>{text}</span>
+    
+    const fieldHighlights = highlights.find(h => h.field === field)?.highlights
+    if (!fieldHighlights || fieldHighlights.length === 0) return <span>{text}</span>
+    
+    let result = []
+    let lastIndex = 0
+    
+    for (const highlight of fieldHighlights) {
+      // Add text before highlight
+      if (highlight.start > lastIndex) {
+        result.push(text.slice(lastIndex, highlight.start))
+      }
+      
+      // Add highlighted text
+      result.push(
+        <mark 
+          key={highlight.start}
+          className="bg-yellow-200 dark:bg-yellow-800 px-1 py-0.5 rounded-sm font-medium"
+        >
+          {highlight.text}
+        </mark>
+      )
+      
+      lastIndex = highlight.end
+    }
+    
+    // Add remaining text
+    if (lastIndex < text.length) {
+      result.push(text.slice(lastIndex))
+    }
+    
+    return <span>{result}</span>
+  }
 
   const handleDeleteTemptation = async (id: string) => {
     try {
@@ -115,13 +217,26 @@ export default function History() {
         <div className="px-4 pb-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            {isSearching && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+              </div>
+            )}
             <Input
-              placeholder="Search temptations..."
+              placeholder="Smart search: descriptions, categories, amounts..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-10 pr-10"
             />
           </div>
+          {useTypoTolerance && (
+            <div className="flex items-center gap-2 mt-2 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-md">
+              <Zap size={14} className="text-orange-600 dark:text-orange-400" />
+              <p className="text-xs text-orange-600 dark:text-orange-400">
+                Showing results with typo correction
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Filters */}
@@ -188,7 +303,16 @@ export default function History() {
         <div className="mb-4">
           <p className="text-sm text-muted-foreground">
             {filteredTemptations.length} {filteredTemptations.length === 1 ? 'result' : 'results'}
-            {searchTerm && ` for "${searchTerm}"`}
+            {searchTerm && (
+              <>
+                {' '}for <span className="font-medium">"{searchTerm}"</span>
+                {searchResults.length > 0 && (
+                  <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                    Ranked by relevance
+                  </span>
+                )}
+              </>
+            )}
           </p>
         </div>
 
@@ -213,6 +337,9 @@ export default function History() {
               const prevTemptation = filteredTemptations[index - 1]
               const showDateHeader = !prevTemptation || 
                 formatDate(temptation.createdAt) !== formatDate(prevTemptation.createdAt)
+              
+              const highlights = getHighlights(temptation)
+              const searchResult = searchTerm ? searchResults.find(r => r.item.id === temptation.id) : null
 
               return (
                 <div key={temptation.id}>
@@ -224,25 +351,44 @@ export default function History() {
                     </div>
                   )}
                   
-                  <Card className="group hover:bg-muted/50 transition-colors">
+                  <Card className={cn(
+                    "group hover:bg-muted/50 transition-colors",
+                    searchResult && "ring-1 ring-primary/20 bg-primary/5"
+                  )}>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-full ${
+                        <div className={`relative p-2 rounded-full ${
                           temptation.resisted 
                             ? 'bg-green-500/20 text-green-600' 
                             : 'bg-red-500/20 text-red-600'
                         }`}>
                           <CategoryIcon category={temptation.category} />
+                          {searchResult && (
+                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full flex items-center justify-center">
+                              <span className="text-[8px] text-primary-foreground font-bold">
+                                {Math.round(searchResult.score * 100)}
+                              </span>
+                            </div>
+                          )}
                         </div>
                         
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
                             <p className="font-medium truncate">
                               {temptation.resisted ? 'Resisted' : 'Gave In'}
+                              {searchResult && (
+                                <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+                                  {Math.round(searchResult.score * 100)}% match
+                                </span>
+                              )}
                             </p>
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-semibold">
-                                {settings.formatAmount(temptation.amount)}
+                                <HighlightedText 
+                                  text={settings.formatAmount(temptation.amount)}
+                                  highlights={highlights}
+                                  field="amount"
+                                />
                               </p>
                               <Button
                                 variant="ghost"
@@ -255,13 +401,21 @@ export default function History() {
                             </div>
                           </div>
                           
-                          <p className="text-sm text-muted-foreground truncate mb-1">
-                            {temptation.description}
+                          <p className="text-sm text-muted-foreground mb-1 break-words">
+                            <HighlightedText 
+                              text={temptation.description}
+                              highlights={highlights}
+                              field="description"
+                            />
                           </p>
                           
                           <div className="flex items-center justify-between">
                             <Badge variant="outline" className="text-xs">
-                              {temptation.category}
+                              <HighlightedText 
+                                text={temptation.category}
+                                highlights={highlights}
+                                field="category"
+                              />
                             </Badge>
                             <p className="text-xs text-muted-foreground">
                               {new Date(temptation.createdAt).toLocaleTimeString([], { 
