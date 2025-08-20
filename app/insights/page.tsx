@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { BottomNav } from '@/components/bottom-nav'
-import { Temptation, CategoryStats } from '@/lib/types'
-import { calculateCategoryStats } from '@/lib/calculations'
+import { StreakTracker } from '@/components/streak-tracker'
+import { Temptation, CategoryStats, UserProgress } from '@/lib/types'
+import { calculateCategoryStats, calculateUserProgress } from '@/lib/calculations'
 import { generateCleanInsights, generateAIRecommendations, generateAIInsights, CleanInsight, AIInsight } from '@/lib/clean-insights'
 import db, { initializeDB } from '@/lib/storage'
 
@@ -18,6 +19,7 @@ export default function Insights() {
   const [insights, setInsights] = useState<CleanInsight[]>([])
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([])
   const [recommendations, setRecommendations] = useState<string[]>([])
+  const [userProgress, setUserProgress] = useState<UserProgress | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   const loadData = useCallback(async () => {
@@ -31,12 +33,14 @@ export default function Insights() {
         const cleanInsights = generateCleanInsights(savedTemptations, stats)
         const aiInsightsData = generateAIInsights(savedTemptations, stats)
         const aiRecommendations = generateAIRecommendations(savedTemptations, stats)
+        const progress = calculateUserProgress(savedTemptations)
         
         setTemptations(savedTemptations)
         setCategoryStats(stats)
         setInsights(cleanInsights)
         setAiInsights(aiInsightsData)
         setRecommendations(aiRecommendations)
+        setUserProgress(progress)
       } else {
         setTemptations([])
         setCategoryStats([])
@@ -112,6 +116,12 @@ export default function Insights() {
       </div>
 
       <div className="p-4 space-y-6">
+        {/* Streak Tracking */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Streak Tracking</h2>
+          <StreakTracker userProgress={userProgress} />
+        </div>
+
         {/* Key Insights Grid */}
         {insights.length > 0 && (
           <div className="space-y-4">

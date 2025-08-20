@@ -114,7 +114,7 @@ export default function Home() {
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="text-sm text-muted-foreground">Current Streak</p>
-                        <p className="text-2xl font-bold">{userProgress?.currentStreak || 0} days</p>
+                        <p className="text-2xl font-bold">{userProgress?.currentStreak || 0} temptations</p>
                       </div>
                     </div>
                   </CardContent>
