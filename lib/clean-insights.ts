@@ -72,7 +72,7 @@ export function generateCleanInsights(temptations: Temptation[], categoryStats: 
       id: 'current-streak',
       type: 'achievement',
       title: 'Current Streak',
-      value: `${currentStreak} days`,
+      value: `${currentStreak} temptations`,
       description: currentStreak >= 7 ? 'Excellent momentum!' : 'Building good habits',
       priority: currentStreak >= 7 ? 'high' : 'medium'
     })
@@ -355,7 +355,7 @@ export function generateAIInsights(temptations: Temptation[], categoryStats: Cat
     insights.push({
       id: 'strong-streak',
       type: 'behavioral',
-      title: `${currentStreak}-Day Streak Active`,
+      title: `${currentStreak} Temptation Streak Active`,
       description: `You're building strong resistance habits. Don't let psychological pressure to "reward yourself" break this momentum.`,
       confidence: 95,
       priority: 'medium'

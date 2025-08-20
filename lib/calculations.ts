@@ -29,16 +29,16 @@ export function calculateCurrentStreak(temptations: Temptation[]): number {
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   )
 
-  let streak = 0
+  let currentStreak = 0
   for (const temptation of sortedTemptations) {
     if (temptation.resisted) {
-      streak++
+      currentStreak++
     } else {
       break
     }
   }
 
-  return streak
+  return currentStreak
 }
 
 export function calculateLongestStreak(temptations: Temptation[]): number {
