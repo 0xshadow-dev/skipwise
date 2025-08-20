@@ -8,7 +8,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent } from '@/components/ui/card'
 import { Temptation, TemptationCategory, Currency } from '@/lib/types'
-import { categorizeTemptation, getCategorySuggestions, getCategoryColor, getAllCategories } from '@/lib/ai-categorization'
+import { getCategoryColor, getAllCategories } from '@/lib/ai-categorization'
+import { enhancedCategorizeTemptation, getEnhancedCategorySuggestions } from '@/lib/enhanced-ai-categorization'
 import { CategoryIcon } from '@/components/category-icon'
 import { settings } from '@/lib/settings'
 import { haptics } from '@/lib/haptics'
@@ -37,11 +38,11 @@ export function NewTemptationModal({ isOpen, onClose, onSubmit }: NewTemptationM
     setDescription(value)
     if (value.trim().length > 3) {
       try {
-        const predicted = await categorizeTemptation(value.trim())
+        const predicted = await enhancedCategorizeTemptation(value.trim())
         setPredictedCategory(predicted)
         
-        // Get multiple suggestions for better UX
-        const suggestions = getCategorySuggestions(value.trim(), 3)
+        // Get single best suggestion
+        const suggestions = getEnhancedCategorySuggestions(value.trim(), 1)
         setCategorySuggestions(suggestions)
       } catch (error) {
         console.warn('Failed to predict category:', error)
@@ -185,7 +186,7 @@ export function NewTemptationModal({ isOpen, onClose, onSubmit }: NewTemptationM
                     <div className="text-xs font-medium text-muted-foreground mb-2">
                       AI Suggestions
                     </div>
-                    {categorySuggestions.slice(0, 3).map((suggestion, index) => (
+                    {categorySuggestions.slice(0, 1).map((suggestion, index) => (
                       <button
                         key={suggestion.category}
                         type="button"
