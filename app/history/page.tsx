@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { ArrowLeft, Search, Trash2, Zap } from "lucide-react";
+import { Search, Trash2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -247,10 +247,7 @@ export default function History() {
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="sticky top-0 bg-background/95 backdrop-blur-md border-b z-40">
-        <div className="flex items-center gap-3 p-4">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft size={20} />
-          </Button>
+        <div className="flex items-center justify-center p-4">
           <h1 className="text-xl font-bold">History</h1>
         </div>
 
