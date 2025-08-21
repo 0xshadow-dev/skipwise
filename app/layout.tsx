@@ -16,8 +16,14 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "SkipWise - Resist Spending Temptations",
-  description: "Track your spending temptations and build financial discipline with smart resistance tracking and AI-powered insights.",
+  description:
+    "Track your spending temptations and build financial discipline with smart resistance tracking and AI-powered insights.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
 };
 
 export const viewport = {
